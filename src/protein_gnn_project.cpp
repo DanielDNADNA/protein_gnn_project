@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <unordered_map>
 #include <filesystem>
-#include <cstdint>
 #include <string_view>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -14,104 +13,32 @@
 #include <gemmi/mmcif.hpp>
 #include <gemmi/chemcomp.hpp>
 #include "protein_gnn_project.h"
+#include "atom.h"
+#include "edges.h"
 
 namespace py = pybind11;
 namespace fs = std::filesystem;
 
-struct AtomRecord {
-
-	py::ssize_t count;
-
-	std::vector<float> x, y, z; //positions
-	
-	std::vector<uint8_t> atom_type; 
-	std::vector<uint8_t> locant; //relative position in protein
-	std::vector<uint8_t> residue_type;
-
-	std::vector<int> atom_index;
-	std::vector<int> atom_degree;
-
-	std::vector<float> b_factor;
-
-	void reserve(py::ssize_t count) {
-		size_t n = static_cast<size_t>(count);
-
-		x.reserve(n);
-		y.reserve(n);
-		z.reserve(n);
-
-		atom_type.reserve(n);
-		locant.reserve(n);
-		residue_type.reserve(n);
-
-		atom_index.reserve(n);
-		atom_degree.reserve(n);
-
-		b_factor.reserve(n);
-	}
-};
-
-struct Edges {
-
-	py::ssize_t count;
-	std::vector<int> sourceNode; 
-	std::vector<int> sinkNode;
-	std::vector<int> edgeType;
-
-	void reserve(py::ssize_t count) {
-		size_t n = static_cast<size_t>(count);
-		sourceNode.reserve(3 * n);
-		sinkNode.reserve(3 * n);
-		edgeType.reserve(3 * n);
-	}
-};
-
-class Parse_mmCIF {
-
-public: 
-
-	py::ssize_t num_atoms = 0;
-	gemmi::Structure st;
-
-	std::unordered_map<std::string, int> atom_map = {
-		{"C", 0}, 
-		{"N", 1},
-		{"O", 2},
-		{"S", 3},
-		{"P", 4}
-	};
-	
-	std::unordered_map<std::string, int> residue_map = {
-		{"ALA", 0},  {"ARG", 1},  {"ASN", 2},  {"ASP", 3},
-		{"CYS", 4},  {"GLU", 5},  {"GLN", 6},  {"GLY", 7},
-		{"HIS", 8},  {"ILE", 9},  {"LEU", 10}, {"LYS", 11},
-		{"MET", 12}, {"PHE", 13}, {"PRO", 14}, {"SER", 15},
-		{"THR", 16}, {"TRP", 17}, {"TYR", 18}, {"VAL", 19},
-	};
-
-	AtomRecord atoms;
-	Edges edges;
-
-	Parse_mmCIF(const std::string& filePath) {
-		openFile(filePath);
-		countAtoms();
-	}
+Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
+	openFile(filePath);
+	countAtoms();
+}
 
 	//atom.element.name()
-	int getAtomID(const std::string& elem) {
+int Parse_mmCIF::getAtomID(const std::string& elem) {
 		auto it = atom_map.find(elem);
 		if (it != atom_map.end()) return it->second;
 		else return 5; //unknown
 	}
 
 	//res.name
-	int getResidueID(const std::string& res) {
+int Parse_mmCIF::getResidueID(const std::string& res) {
 		auto it = residue_map.find(res); 
 		if (it != residue_map.end()) return it->second;
 		else return 20; //unknown
 	}
 
-	int getLocantDepth(const std::string& atom_name) {
+int Parse_mmCIF::getLocantDepth(const std::string& atom_name) {
 		//these are already position 0
 		if (atom_name == "N" || atom_name == "C" || atom_name == "O" ||
 			atom_name == "OXT" || atom_name == "CA") {
@@ -135,11 +62,11 @@ public:
 		}
 	}
 
-	void openFile(const std::string& filePath) {
+void Parse_mmCIF::openFile(const std::string& filePath) {
 		st = gemmi::read_structure_gz(filePath, gemmi::CoorFormat::Detect);
 	}
 
-	void countAtoms() {
+void Parse_mmCIF::countAtoms() {
 		py::ssize_t count = 0;
 		//structure -> model -> chain -> residue -> atom
 
@@ -166,7 +93,7 @@ public:
 		return;
 	}
 	
-	void constructAtoms() {
+void Parse_mmCIF::constructAtoms() {
 
 		atoms.reserve(num_atoms);
 		edges.reserve(num_atoms);
@@ -255,7 +182,7 @@ public:
 		}
 	}
 
-	py::array_t<float> getCoords() {
+py::array_t<float> Parse_mmCIF::getCoords() {
 
 		py::array_t<float> coords(
 			py::array::ShapeContainer{ num_atoms, (py::ssize_t)3 }
@@ -273,7 +200,7 @@ public:
 		return coords;
 	}
 
-	py::array_t<float> constructNodes() {
+py::array_t<float> Parse_mmCIF::constructNodes() {
 
 		//0-6: Atom type, 7-14: Atom locant, 15: atom degree, 16-36: residue type
 		py::array_t<float> nodes(
@@ -295,7 +222,7 @@ public:
 		return nodes;
 	}
 
-	py::array_t<float> constructTargetVector() {
+py::array_t<float> Parse_mmCIF::constructTargetVector() {
 		py::array_t<float>targetNode(
 			py::array::ShapeContainer{num_atoms, (py::ssize_t)1 }
 		);
@@ -311,7 +238,7 @@ public:
 
 	//use of AI to find all the rules
 	// Returns: 0 (Single), 1 (Double), 2 (Triple), 3 (Aromatic/Delocalized)
-	int getBondType(const std::string& res_name, const std::string& atom1, const std::string& atom2) {
+int Parse_mmCIF::getBondType(const std::string& res_name, const std::string& atom1, const std::string& atom2) {
 
 		// Lambda to check pairs regardless of order (e.g., C-O is the same as O-C)
 		auto is_pair = [&](std::string_view a, std::string_view b) {
@@ -340,8 +267,8 @@ public:
 		return 0;
 	}
 
-	void constructIntraResidueEdges(const std::unordered_map<std::string, int>& local_atoms, 
-		const std::unordered_map<int, std::string>& atoms_from_index, const std::string& res_name, std::vector<int>& indices) {
+void Parse_mmCIF::constructIntraResidueEdges(const std::unordered_map<std::string, int>& local_atoms, 
+	const std::unordered_map<int, std::string>& atoms_from_index, const std::string& res_name, std::vector<int>& indices) {
 		indices.clear();
 		
 		for (const auto& pair : local_atoms) {
@@ -379,37 +306,16 @@ public:
 		return; 
 	}
 
-	void constructInterResidueEdges(int prev_C_global_index, int current_N_index) {
+void Parse_mmCIF::constructInterResidueEdges(int prev_C_global_index, int current_N_index) {
 
-		edges.sourceNode.push_back(prev_C_global_index);
-		edges.sinkNode.push_back(current_N_index);
-		edges.edgeType.push_back(0);
+	edges.sourceNode.push_back(prev_C_global_index);
+	edges.sinkNode.push_back(current_N_index);
+	edges.edgeType.push_back(0);
 
-		edges.sourceNode.push_back(current_N_index);
-		edges.sinkNode.push_back(prev_C_global_index);
-		edges.edgeType.push_back(0);
+	edges.sourceNode.push_back(current_N_index);
+	edges.sinkNode.push_back(prev_C_global_index);
+	edges.edgeType.push_back(0);
 
-		return; 
-	}
-};
-
-
-
-PYBIND11_MODULE(spatial_engine, m) {
-	m.doc() = "Parses mmCIF file";
-	py::class_<Parse_mmCIF>(m, "Parse_mmCIF")
-
-		.def(py::init<const std::string&>())
-
-		.def_readwrite("atom_map", &Parse_mmCIF::atom_map)
-
-		.def("getAtomID", &Parse_mmCIF::getAtomID)
-		.def("getResidueID", &Parse_mmCIF::getResidueID)
-		.def("getLocantDepth", &Parse_mmCIF::getLocantDepth)
-		.def("openFile", &Parse_mmCIF::openFile)
-		.def("countAtoms", &Parse_mmCIF::countAtoms)
-		.def("constructAtoms", &Parse_mmCIF::constructAtoms)
-		.def("getCoords", &Parse_mmCIF::getCoords)
-		.def("constructNodes", &Parse_mmCIF::constructNodes);
-
+	return; 
 }
+

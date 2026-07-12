@@ -1,7 +1,59 @@
-
+#pragma once
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <unordered_map>
+#include <string>
+#include <gemmi/mmread_gz.hpp>
+#include <gemmi/model.hpp>
+#include "atom.h"
+#include "edges.h"
 
 namespace py = pybind11;
 
-py::array_t<float> parseCoordinates(const std::string& filepath);
+class Parse_mmCIF {
+
+public: 
+
+	py::ssize_t num_atoms;
+	gemmi::Structure st;
+
+	std::unordered_map<std::string, int> atom_map;
+	
+	std::unordered_map<std::string, int> residue_map;
+
+	AtomRecord atoms;
+	Edges edges;
+
+	Parse_mmCIF(const std::string& filePath);
+
+	//atom.element.name()
+	int getAtomID(const std::string& elem);
+
+	//res.name
+	int getResidueID(const std::string& res);
+
+	int getLocantDepth(const std::string& atom_name);
+
+	void openFile(const std::string& filePath);
+
+	void countAtoms();
+
+	void constructAtoms();
+
+	py::array_t<float> getCoords();
+    
+	py::array_t<float> constructNodes();
+	//use of AI to find all the rules
+	// Returns: 0 (Single), 1 (Double), 2 (Triple), 3 (Aromatic/Delocalized)
+
+    py::array_t<float> constructTargetVector();
+	int getBondType(const std::string& res_name, const std::string& atom1, 
+        const std::string& atom2);
+
+	void constructIntraResidueEdges(const std::unordered_map<std::string, int>& local_atoms, 
+		const std::unordered_map<int, std::string>& atoms_from_index, const std::string& res_name, 
+        std::vector<int>& indices);
+
+	void constructInterResidueEdges(int prev_C_global_index, int current_N_index);
+	
+};

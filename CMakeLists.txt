@@ -42,6 +42,11 @@ FetchContent_MakeAvailable(pybind11)
 set(SOURCE_FILES
     src/protein_gnn_project.cpp
     src/protein_gnn_project.h
+    src/kd_tree.cpp
+    src/kd_tree.h
+    src/bindings.cpp
+    src/atom.h
+    src/edges.h
 )
 
 # 7. Build the Pybind11 Python extension module

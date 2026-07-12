@@ -1,2 +1,17 @@
+# Python virtual environment
+.venv/
+
+# CMake build files
+build/
 out/
+
+# Compiled Python extensions
+*.so
+
+# VS Code / Visual Studio files
+.vscode/
 .vs/
+
+# Python cache
+__pycache__/
+*.pyc
