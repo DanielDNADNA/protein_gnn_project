@@ -16,8 +16,8 @@ struct AtomRecord {
 	std::vector<uint8_t> locant; //relative position in protein
 	std::vector<uint8_t> residue_type;
 
-	std::vector<int> atom_index;
-	std::vector<int> atom_degree;
+	std::vector<size_t> atom_index;
+	std::vector<size_t> atom_degree;
 
 	std::vector<float> b_factor;
 

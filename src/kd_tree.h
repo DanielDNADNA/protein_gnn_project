@@ -22,9 +22,11 @@ class KDTree {
 
     bool less (int lhs, int rhs, int axis) const;
 
-    size_t constructTree(int begin, int end, int depth);
+    int constructTree(int begin, int end, int depth);
     
     void radiusSearch(float qx, float qy, float qz, float radius, int depth, 
         std::vector<int>& neighbors, int index);
+
+    size_t getNodeDegree (float qx, float qy, float qz, float radius, std::vector<int>& neighbors);
 };
 

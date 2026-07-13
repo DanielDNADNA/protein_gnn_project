@@ -14,6 +14,8 @@
         right.reserve(atoms.x.size());
         atom_index.reserve(atoms.x.size());
         std::iota(indices.begin(), indices.end(), 0);
+
+        KDTree::constructTree(0, atoms.x.size(), 0);
     }
 
     bool KDTree::less (int lhs, int rhs, int axis) const {
@@ -46,7 +48,7 @@
         else return rhs > lhs;
     }
 
-    size_t KDTree::constructTree(int begin, int end, int depth) {
+    int KDTree::constructTree(int begin, int end, int depth) {
 
         if (begin >= end) return -1;
 
@@ -75,7 +77,7 @@
         //depending on axis
         int median_index = indices[median_position];
         
-        size_t node = atom_index.size(); 
+        int node = atom_index.size(); 
 
         atom_index.push_back(median_index);
         left.push_back(-1);
@@ -88,40 +90,83 @@
         return node;
     }
     
+    //given the coords of a point, finds all points within a given radius
     void KDTree::radiusSearch(float qx, float qy, float qz, float radius, int depth, 
         std::vector<int>& neighbors, int index) {
+        //node: index corresponds to atom_index; points to a index in atoms object
+        //so left[inx] = index -> atom_index[index] = node -> atoms.x[node] (the coord)
+        //qx, qy, qz are coords of the point whose neighbors I am trying to find
         
         if (index >= atom_index.size() || index == -1) return;
 
         //points to a location within atoms
         int node = atom_index[index];
 
-        if (node >= atoms.x.size()) return;
+        if (node >= atoms.x.size() || node == -1) return;
 
         int axis = depth % 3;
 
+        float x = atoms.x[node];
+        float y = atoms.y[node];
+        float z = atoms.z[node];
         //check if within range of the node in question
-        float dx = atoms.x[node]-qx;
-        float dy = atoms.y[node]-qy;
-        float dz = atoms.z[node]-qz;
-
-        int rightChild = right[index];
-        int leftChild = left[index];
+        float dx = qx - x;
+        float dy = qy - y;
+        float dz = qz - z;
 
         //if a point is in range, it is a neighbor
         if (dx * dx + dy * dy + dz * dz <= radius * radius) {
             neighbors.push_back(node); 
         }
 
-        if (right[index] == -1 || left[index] == -1) return;
+        float distance;
 
+        switch (axis) {
+            case 0: distance = dx; 
+                    break;
+            case 1: distance = dy; 
+                    break;
+            default: distance = dz; 
+                    break;
+        }
+
+        int rightChild = right[index];
+        int leftChild = left[index];
+
+        //the range of possible points is given by [-rad+qx, rad+qx]
+        //if the original point is within that range, check both children
+
+        if (std::abs(distance) <= radius) {
+            if (rightChild != -1) {
+                radiusSearch(qx, qy, qz, radius, depth+1, neighbors, rightChild);
+            }
+            if (leftChild != -1) {
+                radiusSearch(qx, qy, qz, radius, depth+1, neighbors, leftChild);
+            }
+        }
+
+        //if distance > 0, I am on the left side of the point, so move right
+        else if (distance > 0 && rightChild != -1) {
+            radiusSearch(qx, qy, qz, radius, depth+1, neighbors, rightChild);
+        }
         
+        else if (distance < 0 && leftChild != -1) {
+            radiusSearch(qx, qy, qz, radius, depth+1, neighbors, leftChild);
+        }
 
         return;
     }
 
-    int nodeDegree () {
+    //.reserve will be done outside of the function
+    size_t KDTree::getNodeDegree (float qx, float qy, float qz, float radius, std::vector<int>& neighbors) {
+        neighbors.clear();
+        radiusSearch(qx, qy, qz, radius, 0, neighbors, 0);
 
+        //radius search includes self as neighbor; excluded by spatial degree
+        if (neighbors.size() > 0) {
+            return neighbors.size() - 1 ;
+        }
+        else return 0;
     }
 
 

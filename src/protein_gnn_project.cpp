@@ -15,16 +15,18 @@
 #include "protein_gnn_project.h"
 #include "atom.h"
 #include "edges.h"
+#include "kd_tree.h"
 
 namespace py = pybind11;
 namespace fs = std::filesystem;
 
-Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
+Parse_mmCIF::Parse_mmCIF(const std::string& filePath, float radius) : radius(radius) {
 	openFile(filePath);
 	countAtoms();
 }
 
 	//atom.element.name()
+	//returns 0-5
 int Parse_mmCIF::getAtomID(const std::string& elem) {
 		auto it = atom_map.find(elem);
 		if (it != atom_map.end()) return it->second;
@@ -137,9 +139,6 @@ void Parse_mmCIF::constructAtoms() {
 						std::string atom_name = atom.name;
 						int atom_locant = getLocantDepth(atom_name);
 
-						//placeholder
-						int atom_degree = 0;
-
 						atoms.x.push_back(x_cord);
 						atoms.y.push_back(y_cord);
 						atoms.z.push_back(z_cord);
@@ -151,8 +150,6 @@ void Parse_mmCIF::constructAtoms() {
 						atoms.atom_index.push_back(i);
 						local_atoms[atom_name] = i;
 						atoms_from_index[i] = atom_name;
-
-						atoms.atom_degree.push_back(atom_degree);
 
 						atoms.b_factor.push_back(atom.b_iso);
 
@@ -182,6 +179,22 @@ void Parse_mmCIF::constructAtoms() {
 		}
 	}
 
+void Parse_mmCIF::getNodeDegree() {
+	
+	atoms.atom_degree.clear();
+
+	KDTree tree(atoms); 
+	std::vector<int> neighbors;
+	neighbors.reserve(64);
+
+	for (size_t i = 0; i < atoms.x.size(); i++) {
+
+		size_t nodeDegree = tree.getNodeDegree (atoms.x[i], atoms.y[i], atoms.z[i], radius, 
+			neighbors);
+		atoms.atom_degree.push_back(nodeDegree);
+	}
+}
+
 py::array_t<float> Parse_mmCIF::getCoords() {
 
 		py::array_t<float> coords(
@@ -200,9 +213,11 @@ py::array_t<float> Parse_mmCIF::getCoords() {
 		return coords;
 	}
 
-py::array_t<float> Parse_mmCIF::constructNodes() {
+py::array_t<float> Parse_mmCIF::constructNodeFeatures() {
 
-		//0-6: Atom type, 7-14: Atom locant, 15: atom degree, 16-36: residue type
+		getNodeDegree();
+
+		//0-5: Atom type, 6-13: Atom locant, 14: atom degree, 15-35: residue type
 		py::array_t<float> nodes(
 			py::array::ShapeContainer{ num_atoms, (py::ssize_t)36 }
 		);

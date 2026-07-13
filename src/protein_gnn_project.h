@@ -15,6 +15,7 @@ class Parse_mmCIF {
 public: 
 
 	py::ssize_t num_atoms;
+	float radius;
 	gemmi::Structure st;
 
 	std::unordered_map<std::string, int> atom_map;
@@ -24,7 +25,7 @@ public:
 	AtomRecord atoms;
 	Edges edges;
 
-	Parse_mmCIF(const std::string& filePath);
+	Parse_mmCIF(const std::string& filePath, float radius);
 
 	//atom.element.name()
 	int getAtomID(const std::string& elem);
@@ -40,9 +41,11 @@ public:
 
 	void constructAtoms();
 
+	void getNodeDegree();
+
 	py::array_t<float> getCoords();
     
-	py::array_t<float> constructNodes();
+	py::array_t<float> constructNodeFeatures();
 	//use of AI to find all the rules
 	// Returns: 0 (Single), 1 (Double), 2 (Triple), 3 (Aromatic/Delocalized)
 
