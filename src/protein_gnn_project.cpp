@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -12,6 +11,7 @@
 #include <gemmi/model.hpp>
 #include <gemmi/mmcif.hpp>
 #include <gemmi/chemcomp.hpp>
+#include <cmath>
 #include "protein_gnn_project.h"
 #include "atom.h"
 #include "edges.h"
@@ -21,8 +21,11 @@ namespace py = pybind11;
 namespace fs = std::filesystem;
 
 Parse_mmCIF::Parse_mmCIF(const std::string& filePath, float radius) : radius(radius) {
+	
 	openFile(filePath);
 	countAtoms();
+	constructAtoms();
+
 }
 
 	//atom.element.name()
@@ -195,6 +198,7 @@ void Parse_mmCIF::getNodeDegree() {
 	}
 }
 
+//matrix of 3D coordinates of the nodes; [number of nodes, 3]
 py::array_t<float> Parse_mmCIF::getCoords() {
 
 		py::array_t<float> coords(
@@ -285,6 +289,7 @@ int Parse_mmCIF::getBondType(const std::string& res_name, const std::string& ato
 void Parse_mmCIF::constructIntraResidueEdges(const std::unordered_map<std::string, int>& local_atoms, 
 	const std::unordered_map<int, std::string>& atoms_from_index, const std::string& res_name, std::vector<int>& indices) {
 		indices.clear();
+		indices.reserve(local_atoms.size());
 		
 		for (const auto& pair : local_atoms) {
 			indices.push_back(pair.second);
@@ -306,15 +311,19 @@ void Parse_mmCIF::constructIntraResidueEdges(const std::unordered_map<std::strin
 					std::string atom1_name = atoms_from_index.at(src);
 					std::string atom2_name = atoms_from_index.at(sink);
 
+					float euclidDist = std::sqrt(dist_sq);
 					int edge_type = getBondType(res_name, atom1_name, atom2_name);
 
 					edges.sourceNode.push_back(src);
 					edges.sinkNode.push_back(sink);
 					edges.edgeType.push_back(edge_type);
+					edges.euclideanDistance.push_back(euclidDist);
 
+					//bidirectional
 					edges.sourceNode.push_back(sink);
 					edges.sinkNode.push_back(src);
 					edges.edgeType.push_back(edge_type);
+					edges.euclideanDistance.push_back(euclidDist);
 				}
 			}
 		}
@@ -323,14 +332,49 @@ void Parse_mmCIF::constructIntraResidueEdges(const std::unordered_map<std::strin
 
 void Parse_mmCIF::constructInterResidueEdges(int prev_C_global_index, int current_N_index) {
 
-	edges.sourceNode.push_back(prev_C_global_index);
-	edges.sinkNode.push_back(current_N_index);
-	edges.edgeType.push_back(0);
+	float dx = atoms.x[prev_C_global_index] - atoms.x[current_N_index];
+	float dy = atoms.y[prev_C_global_index] - atoms.y[current_N_index];
+	float dz = atoms.z[prev_C_global_index] - atoms.z[current_N_index];;
 
-	edges.sourceNode.push_back(current_N_index);
-	edges.sinkNode.push_back(prev_C_global_index);
+	float squaredDistance = dx*dx + dy*dy + dz*dz;
+	float euclidDist = std::sqrt(squaredDistance);
+
 	edges.edgeType.push_back(0);
+	edges.sourceNode.push_back(current_N_index);
+	edges.euclideanDistance.push_back(euclidDist);
+	edges.sinkNode.push_back(prev_C_global_index);
+	
+	edges.edgeType.push_back(0);
+	edges.euclideanDistance.push_back(euclidDist);
+	edges.sinkNode.push_back(current_N_index);
+	edges.sourceNode.push_back(prev_C_global_index);
 
 	return; 
 }
 
+std::tuple<py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::constructEdges() {
+	
+	py::array_t<int64_t>edgeIndex(
+		py::array::ShapeContainer{(py::ssize_t)edges.sourceNode.size(), (py::ssize_t)2 }
+	);
+
+	py::array_t<float>edgeAttr (
+		py::array::ShapeContainer{(py::size_t)edges.sourceNode.size(), (py::size_t)5}
+	);
+
+	auto viewIndex = edgeIndex.mutable_unchecked<2>();
+
+	auto viewAttr = edgeAttr.mutable_unchecked<2>();
+	std::fill(edgeAttr.mutable_data(), edgeAttr.mutable_data() + edgeAttr.size(), 0.0f);
+
+	for (size_t i = 0; i < edges.sourceNode.size(); i++) {
+		viewIndex(i, 0) = edges.sourceNode[i];
+		viewIndex(i, 1) = edges.sinkNode[i];
+
+		///0-3 : single, double, triple, delocalized, 4: euclidean distance
+		viewAttr(i, edges.edgeType[i]) = 1.0f;
+		viewAttr(i, 4) = edges.euclideanDistance[i];
+	}
+
+	return {edgeIndex, edgeAttr};
+}

@@ -28,5 +28,6 @@ class KDTree {
         std::vector<int>& neighbors, int index);
 
     size_t getNodeDegree (float qx, float qy, float qz, float radius, std::vector<int>& neighbors);
+    
 };
 

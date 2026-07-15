@@ -3,6 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <unordered_map>
 #include <string>
+#include <tuple>
 #include <gemmi/mmread_gz.hpp>
 #include <gemmi/model.hpp>
 #include "atom.h"
@@ -59,4 +60,5 @@ public:
 
 	void constructInterResidueEdges(int prev_C_global_index, int current_N_index);
 	
+	std::tuple<py::array_t<int64_t>, py::array_t<float>> constructEdges();
 };
