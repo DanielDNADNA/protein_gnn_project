@@ -1,15 +1,9 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-
-namespace py = pybind11;
 
 struct AtomRecord {
-
-	py::ssize_t count;
-
+	
 	std::vector<float> x, y, z; //positions
 	
 	std::vector<uint8_t> atom_type; 
@@ -17,12 +11,11 @@ struct AtomRecord {
 	std::vector<uint8_t> residue_type;
 
 	std::vector<size_t> atom_index;
-	std::vector<size_t> atom_degree;
+	std::vector<int> atom_degree;
 
 	std::vector<float> b_factor;
 
-	void reserve(py::ssize_t count) {
-		size_t n = static_cast<size_t>(count);
+	void reserve(size_t n) {
 
 		x.reserve(n);
 		y.reserve(n);

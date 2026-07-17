@@ -100,8 +100,8 @@ void Parse_mmCIF::countAtoms() {
 	
 void Parse_mmCIF::constructAtoms() {
 
-		atoms.reserve(num_atoms);
-		edges.reserve(num_atoms);
+		atoms.reserve(static_cast<size_t>(num_atoms));
+		edges.reserve(static_cast<size_t>(num_atoms));
 
 		int i = 0;
 
@@ -192,7 +192,7 @@ void Parse_mmCIF::getNodeDegree() {
 
 	for (size_t i = 0; i < atoms.x.size(); i++) {
 
-		size_t nodeDegree = tree.getNodeDegree (atoms.x[i], atoms.y[i], atoms.z[i], radius, 
+		int nodeDegree = tree.getNodeDegree (atoms.x[i], atoms.y[i], atoms.z[i], radius, 
 			neighbors);
 		atoms.atom_degree.push_back(nodeDegree);
 	}

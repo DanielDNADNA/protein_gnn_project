@@ -10,11 +10,6 @@ struct Neighbor {
 
 class KDTree {
     public: 
-    
-    std::vector<int> atom_index;
-    std::vector<int> left; 
-    std::vector<int> right;
-    std::vector<int> indices;
 
     const AtomRecord& atoms;
 
@@ -29,5 +24,11 @@ class KDTree {
 
     size_t getNodeDegree (float qx, float qy, float qz, float radius, std::vector<int>& neighbors);
     
+    private: 
+
+    std::vector<int> atom_index;
+    std::vector<int> left; 
+    std::vector<int> right;
+    std::vector<int> indices;
 };
 

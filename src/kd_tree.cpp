@@ -93,7 +93,7 @@
     //given the coords of a point, finds all points within a given radius
     void KDTree::radiusSearch(float qx, float qy, float qz, float radius, int depth, 
         std::vector<int>& neighbors, int index) {
-        //node: index corresponds to atom_index; points to a index in atoms object
+        //node: index corresponds to atom_index; points to an index in atoms object
         //so left[inx] = index -> atom_index[index] = node -> atoms.x[node] (the coord)
         //qx, qy, qz are coords of the point whose neighbors I am trying to find
         
@@ -160,6 +160,8 @@
     //.reserve will be done outside of the function
     size_t KDTree::getNodeDegree (float qx, float qy, float qz, float radius, std::vector<int>& neighbors) {
         neighbors.clear();
+        neighbors.reserve(50);
+        
         radiusSearch(qx, qy, qz, radius, 0, neighbors, 0);
 
         //radius search includes self as neighbor; excluded by spatial degree
