@@ -114,11 +114,6 @@
         float dy = qy - y;
         float dz = qz - z;
 
-        //if a point is in range, it is a neighbor
-        if (dx * dx + dy * dy + dz * dz <= radius * radius) {
-            neighbors.push_back(node); 
-        }
-
         float distance;
 
         switch (axis) {
@@ -148,10 +143,17 @@
         //if distance > 0, I am on the left side of the point, so move right
         else if (distance > 0 && rightChild != -1) {
             radiusSearch(qx, qy, qz, radius, depth+1, neighbors, rightChild);
+            return;
         }
         
         else if (distance < 0 && leftChild != -1) {
             radiusSearch(qx, qy, qz, radius, depth+1, neighbors, leftChild);
+            return;
+        }
+
+        //if a point is in range, it is a neighbor
+        if (dx * dx + dy * dy + dz * dz <= radius * radius) {
+            neighbors.push_back(node); 
         }
 
         return;

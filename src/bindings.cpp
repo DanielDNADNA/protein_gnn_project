@@ -9,7 +9,7 @@ PYBIND11_MODULE(spatial_engine, m) {
 	m.doc() = "Parses mmCIF file";
 	py::class_<Parse_mmCIF>(m, "Parse_mmCIF")
 
-		.def(py::init<const std::string&, float>())
+		.def(py::init<const std::string&>())
 
 		.def_readwrite("atom_map", &Parse_mmCIF::atom_map)
 

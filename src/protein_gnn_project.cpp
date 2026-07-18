@@ -12,20 +12,122 @@
 #include <gemmi/mmcif.hpp>
 #include <gemmi/chemcomp.hpp>
 #include <cmath>
+#include <chrono>
+#include <iostream>
 #include "protein_gnn_project.h"
 #include "atom.h"
 #include "edges.h"
 #include "kd_tree.h"
 
 namespace py = pybind11;
-namespace fs = std::filesystem;
 
-Parse_mmCIF::Parse_mmCIF(const std::string& filePath, float radius) : radius(radius) {
+//fills in the edges and atoms structs
+Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 	
-	openFile(filePath);
-	countAtoms();
-	constructAtoms();
+	std::string secondsType = "microseconds";
 
+	auto start = std::chrono::high_resolution_clock::now();
+	openFile(filePath);
+	
+	auto end = std::chrono::high_resolution_clock::now();
+std::cout << "Open file: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " " << secondsType << "\n";
+
+	start = std::chrono::high_resolution_clock::now();
+	
+	countAtoms();
+	
+	end = std::chrono::high_resolution_clock::now();
+std::cout << "Count atoms: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " " << secondsType << "\n";
+
+	start = std::chrono::high_resolution_clock::now();
+
+	constructAtoms();
+	
+	end = std::chrono::high_resolution_clock::now();
+std::cout << "Construct atoms: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " " << secondsType << "\n";
+}
+
+//returns: coordinates, node features, target vector, edge indices, and edge attributes
+std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>, 
+	py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::exportTensors() {
+
+	std::string secondsType = "microseconds";
+	auto start = std::chrono::high_resolution_clock::now();
+
+	auto coordinates = getCoords();
+
+	auto end = std::chrono::high_resolution_clock::now();
+std::cout << "Coords: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " " << secondsType << "\n";
+
+	start = std::chrono::high_resolution_clock::now();
+
+	auto features = constructNodeFeatures();
+
+	end = std::chrono::high_resolution_clock::now();
+std::cout << "Node features: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " " << secondsType << "\n";;
+
+	start = std::chrono::high_resolution_clock::now();
+
+	auto targetVector = constructTargetVector();
+
+	end = std::chrono::high_resolution_clock::now();
+std::cout << "target vector: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " " << secondsType << "\n";
+
+	start = std::chrono::high_resolution_clock::now();
+
+	auto [edgeIndex, edgeAttr] = constructEdges();
+
+	end = std::chrono::high_resolution_clock::now();
+std::cout << "Construct edges: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " " << secondsType << "\n";
+		
+	std::cout << "atoms: " << num_atoms << "\n";
+	return {coordinates, features, targetVector, edgeIndex, edgeAttr};
+}
+
+//builds edge indices and edge attributes
+std::tuple<py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::constructEdges() {
+	
+	py::array_t<int64_t>edgeIndex(
+		py::array::ShapeContainer{(py::ssize_t)edges.sourceNode.size(), (py::ssize_t)2 }
+	);
+
+	py::array_t<float>edgeAttr (
+		py::array::ShapeContainer{(py::size_t)edges.sourceNode.size(), (py::size_t)5}
+	);
+
+	auto viewIndex = edgeIndex.mutable_unchecked<2>();
+
+	auto viewAttr = edgeAttr.mutable_unchecked<2>();
+	std::fill(edgeAttr.mutable_data(), edgeAttr.mutable_data() + edgeAttr.size(), 0.0f);
+
+	for (size_t i = 0; i < edges.sourceNode.size(); i++) {
+		viewIndex(i, 0) = edges.sourceNode[i];
+		viewIndex(i, 1) = edges.sinkNode[i];
+
+		///0-3 : single, double, triple, delocalized, 4: euclidean distance
+		viewAttr(i, edges.edgeType[i]) = 1.0f;
+		viewAttr(i, 4) = edges.euclideanDistance[i];
+	}
+
+	return {edgeIndex, edgeAttr};
+}
+
+void Parse_mmCIF::openFile(const std::string& filePath) {
+		st = gemmi::read_structure_gz(filePath, gemmi::CoorFormat::Detect);
 }
 
 	//atom.element.name()
@@ -67,10 +169,6 @@ int Parse_mmCIF::getLocantDepth(const std::string& atom_name) {
 		}
 	}
 
-void Parse_mmCIF::openFile(const std::string& filePath) {
-		st = gemmi::read_structure_gz(filePath, gemmi::CoorFormat::Detect);
-	}
-
 void Parse_mmCIF::countAtoms() {
 		py::ssize_t count = 0;
 		//structure -> model -> chain -> residue -> atom
@@ -97,7 +195,8 @@ void Parse_mmCIF::countAtoms() {
 		num_atoms = count;
 		return;
 	}
-	
+
+//also builds edges
 void Parse_mmCIF::constructAtoms() {
 
 		atoms.reserve(static_cast<size_t>(num_atoms));
@@ -184,11 +283,19 @@ void Parse_mmCIF::constructAtoms() {
 
 void Parse_mmCIF::getNodeDegree() {
 	
-	atoms.atom_degree.clear();
-
+	auto start = std::chrono::high_resolution_clock::now();
+	
 	KDTree tree(atoms); 
+	
+	auto end = std::chrono::high_resolution_clock::now();
+std::cout << "KD Tree construction: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " Microseconds" << "\n";
+	
 	std::vector<int> neighbors;
 	neighbors.reserve(64);
+
+	start = std::chrono::high_resolution_clock::now();
 
 	for (size_t i = 0; i < atoms.x.size(); i++) {
 
@@ -196,6 +303,11 @@ void Parse_mmCIF::getNodeDegree() {
 			neighbors);
 		atoms.atom_degree.push_back(nodeDegree);
 	}
+
+	end = std::chrono::high_resolution_clock::now();
+	std::cout << "KD Tree searching: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " Microseconds" << "\n";
 }
 
 //matrix of 3D coordinates of the nodes; [number of nodes, 3]
@@ -219,16 +331,29 @@ py::array_t<float> Parse_mmCIF::getCoords() {
 
 py::array_t<float> Parse_mmCIF::constructNodeFeatures() {
 
+		auto start = std::chrono::high_resolution_clock::now();
 		getNodeDegree();
+
+		auto end = std::chrono::high_resolution_clock::now();
+std::cout << "Build and query kd tree: "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " microseconds" << "\n";
 
 		//0-5: Atom type, 6-13: Atom locant, 14: atom degree, 15-35: residue type
 		py::array_t<float> nodes(
 			py::array::ShapeContainer{ num_atoms, (py::ssize_t)36 }
 		);
 
+		start = std::chrono::high_resolution_clock::now();
 		//initialize to 0
 		std::fill(nodes.mutable_data(), nodes.mutable_data() + nodes.size(), 0.0f);
-
+	
+		end = std::chrono::high_resolution_clock::now();
+std::cout << "Filling nodes with 0 "
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " microseconds" << "\n";
+		
+start = std::chrono::high_resolution_clock::now();
 		auto view = nodes.mutable_unchecked<2>();
 
 		for (py::ssize_t i = 0; i < atoms.x.size(); i++) {
@@ -237,7 +362,10 @@ py::array_t<float> Parse_mmCIF::constructNodeFeatures() {
 			view(i, 14) = atoms.atom_degree[i];
 			view(i, 15 + atoms.residue_type[i]) = 1.0f;
 		}
-
+end = std::chrono::high_resolution_clock::now();
+std::cout << "Writing in nodes"
+          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+          << " microseconds" << "\n";
 		return nodes;
 	}
 
@@ -352,29 +480,4 @@ void Parse_mmCIF::constructInterResidueEdges(int prev_C_global_index, int curren
 	return; 
 }
 
-std::tuple<py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::constructEdges() {
-	
-	py::array_t<int64_t>edgeIndex(
-		py::array::ShapeContainer{(py::ssize_t)edges.sourceNode.size(), (py::ssize_t)2 }
-	);
 
-	py::array_t<float>edgeAttr (
-		py::array::ShapeContainer{(py::size_t)edges.sourceNode.size(), (py::size_t)5}
-	);
-
-	auto viewIndex = edgeIndex.mutable_unchecked<2>();
-
-	auto viewAttr = edgeAttr.mutable_unchecked<2>();
-	std::fill(edgeAttr.mutable_data(), edgeAttr.mutable_data() + edgeAttr.size(), 0.0f);
-
-	for (size_t i = 0; i < edges.sourceNode.size(); i++) {
-		viewIndex(i, 0) = edges.sourceNode[i];
-		viewIndex(i, 1) = edges.sinkNode[i];
-
-		///0-3 : single, double, triple, delocalized, 4: euclidean distance
-		viewAttr(i, edges.edgeType[i]) = 1.0f;
-		viewAttr(i, 4) = edges.euclideanDistance[i];
-	}
-
-	return {edgeIndex, edgeAttr};
-}

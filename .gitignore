@@ -15,3 +15,7 @@ out/
 # Python cache
 __pycache__/
 *.pyc
+
+# Files
+*.cif
+*.cif.gz

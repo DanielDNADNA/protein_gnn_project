@@ -16,7 +16,7 @@ class Parse_mmCIF {
 public: 
 
 	py::ssize_t num_atoms;
-	float radius;
+	float radius = 5.0f;
 	gemmi::Structure st;
 
 	std::unordered_map<std::string, int> atom_map;
@@ -26,7 +26,14 @@ public:
 	AtomRecord atoms;
 	Edges edges;
 
-	Parse_mmCIF(const std::string& filePath, float radius);
+	//fills in the edges and atoms structs
+	Parse_mmCIF(const std::string& filePath);
+
+	//returns: coordinates, node features, target vector
+	std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>, 
+		py::array_t<int64_t>, py::array_t<float>> exportTensors();
+
+	std::tuple<py::array_t<int64_t>, py::array_t<float>> constructEdges();
 
 	//atom.element.name()
 	int getAtomID(const std::string& elem);
@@ -59,6 +66,5 @@ public:
         std::vector<int>& indices);
 
 	void constructInterResidueEdges(int prev_C_global_index, int current_N_index);
-	
-	std::tuple<py::array_t<int64_t>, py::array_t<float>> constructEdges();
+
 };

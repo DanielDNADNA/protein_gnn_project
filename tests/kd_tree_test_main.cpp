@@ -102,7 +102,6 @@ int main() {
     return 0;
 }
 
-
 void bruteForceSearch(float qx, float qy, float qz, float radius, 
     const AtomRecord& atoms, std::vector<int>& neighbors) {
     
