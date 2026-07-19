@@ -23,77 +23,26 @@ namespace py = pybind11;
 
 //fills in the edges and atoms structs
 Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
-	
-	std::string secondsType = "microseconds";
 
-	auto start = std::chrono::high_resolution_clock::now();
 	openFile(filePath);
 	
-	auto end = std::chrono::high_resolution_clock::now();
-std::cout << "Open file: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " " << secondsType << "\n";
-
-	start = std::chrono::high_resolution_clock::now();
-	
 	countAtoms();
-	
-	end = std::chrono::high_resolution_clock::now();
-std::cout << "Count atoms: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " " << secondsType << "\n";
-
-	start = std::chrono::high_resolution_clock::now();
 
 	constructAtoms();
-	
-	end = std::chrono::high_resolution_clock::now();
-std::cout << "Construct atoms: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " " << secondsType << "\n";
 }
 
 //returns: coordinates, node features, target vector, edge indices, and edge attributes
 std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>, 
 	py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::exportTensors() {
 
-	std::string secondsType = "microseconds";
-	auto start = std::chrono::high_resolution_clock::now();
-
 	auto coordinates = getCoords();
-
-	auto end = std::chrono::high_resolution_clock::now();
-std::cout << "Coords: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " " << secondsType << "\n";
-
-	start = std::chrono::high_resolution_clock::now();
 
 	auto features = constructNodeFeatures();
 
-	end = std::chrono::high_resolution_clock::now();
-std::cout << "Node features: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " " << secondsType << "\n";;
-
-	start = std::chrono::high_resolution_clock::now();
-
 	auto targetVector = constructTargetVector();
-
-	end = std::chrono::high_resolution_clock::now();
-std::cout << "target vector: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " " << secondsType << "\n";
-
-	start = std::chrono::high_resolution_clock::now();
 
 	auto [edgeIndex, edgeAttr] = constructEdges();
 
-	end = std::chrono::high_resolution_clock::now();
-std::cout << "Construct edges: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " " << secondsType << "\n";
-		
 	std::cout << "atoms: " << num_atoms << "\n";
 	return {coordinates, features, targetVector, edgeIndex, edgeAttr};
 }
@@ -154,18 +103,18 @@ int Parse_mmCIF::getLocantDepth(const std::string& atom_name) {
 	
 		//7 is chosen as "other"
 		if (atom_name.length() < 2) return 7;
-		if (!std::isalpha(atom_name[1])) return 7;
+		if (!std::isalpha(static_cast<unsigned char>(atom_name[1]))) return 7;
 
 		char locant = atom_name[1];
 
 		switch (locant) {
-			case 'B': return 1; break; //Beta
-			case 'G': return 2; break; //Gamma
-			case 'D': return 3; break; //Delta
-			case 'E': return 4; break; //Epsilon
-			case 'Z': return 5; break; //Zeta
-			case 'H': return 6; break; //Eta
-			default: return 7; break;
+			case 'B': return 1; //Beta
+			case 'G': return 2; //Gamma
+			case 'D': return 3; //Delta
+			case 'E': return 4; //Epsilon
+			case 'Z': return 5; //Zeta
+			case 'H': return 6; //Eta
+			default: return 7; 
 		}
 	}
 
@@ -283,19 +232,10 @@ void Parse_mmCIF::constructAtoms() {
 
 void Parse_mmCIF::getNodeDegree() {
 	
-	auto start = std::chrono::high_resolution_clock::now();
-	
 	KDTree tree(atoms); 
-	
-	auto end = std::chrono::high_resolution_clock::now();
-std::cout << "KD Tree construction: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " Microseconds" << "\n";
 	
 	std::vector<int> neighbors;
 	neighbors.reserve(64);
-
-	start = std::chrono::high_resolution_clock::now();
 
 	for (size_t i = 0; i < atoms.x.size(); i++) {
 
@@ -303,11 +243,6 @@ std::cout << "KD Tree construction: "
 			neighbors);
 		atoms.atom_degree.push_back(nodeDegree);
 	}
-
-	end = std::chrono::high_resolution_clock::now();
-	std::cout << "KD Tree searching: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " Microseconds" << "\n";
 }
 
 //matrix of 3D coordinates of the nodes; [number of nodes, 3]
@@ -330,30 +265,15 @@ py::array_t<float> Parse_mmCIF::getCoords() {
 	}
 
 py::array_t<float> Parse_mmCIF::constructNodeFeatures() {
-
-		auto start = std::chrono::high_resolution_clock::now();
-		getNodeDegree();
-
-		auto end = std::chrono::high_resolution_clock::now();
-std::cout << "Build and query kd tree: "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " microseconds" << "\n";
-
+		
+	getNodeDegree();
 		//0-5: Atom type, 6-13: Atom locant, 14: atom degree, 15-35: residue type
 		py::array_t<float> nodes(
 			py::array::ShapeContainer{ num_atoms, (py::ssize_t)36 }
 		);
-
-		start = std::chrono::high_resolution_clock::now();
 		//initialize to 0
 		std::fill(nodes.mutable_data(), nodes.mutable_data() + nodes.size(), 0.0f);
-	
-		end = std::chrono::high_resolution_clock::now();
-std::cout << "Filling nodes with 0 "
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " microseconds" << "\n";
 		
-start = std::chrono::high_resolution_clock::now();
 		auto view = nodes.mutable_unchecked<2>();
 
 		for (py::ssize_t i = 0; i < atoms.x.size(); i++) {
@@ -362,10 +282,7 @@ start = std::chrono::high_resolution_clock::now();
 			view(i, 14) = atoms.atom_degree[i];
 			view(i, 15 + atoms.residue_type[i]) = 1.0f;
 		}
-end = std::chrono::high_resolution_clock::now();
-std::cout << "Writing in nodes"
-          << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-          << " microseconds" << "\n";
+
 		return nodes;
 	}
 
@@ -410,6 +327,19 @@ int Parse_mmCIF::getBondType(const std::string& res_name, const std::string& ato
 		if (res_name == "ASP" && (is_pair("CG", "OD1") || is_pair("CG", "OD2"))) return 3;
 		if (res_name == "GLU" && (is_pair("CD", "OE1") || is_pair("CD", "OE2"))) return 3;
 
+		if ((res_name == "HIS" || res_name == "HID" || res_name == "HIE" || res_name == "HIP" ) && 
+			(is_pair("CG", "ND1") || is_pair("ND1", "CE1") || is_pair("CE1", "NE2") ||
+			is_pair("NE2", "CD2") || is_pair("CD2", "CG")))
+        return 3;
+
+		if (res_name == "TRP") {
+    	
+		if (is_pair("CG", "CD1") || is_pair("CD1", "NE1") || is_pair("NE1", "CE2") || is_pair("CE2", "CD2") ||
+        is_pair("CD2", "CG") || is_pair("CE2", "CZ2") || is_pair("CZ2", "CH2") || is_pair("CH2", "CZ3") ||
+        is_pair("CZ3", "CE3") || is_pair("CE3", "CD2"))
+        return 3;
+	}
+		
 		// If it's not in the list, it's a standard single bond.
 		return 0;
 	}

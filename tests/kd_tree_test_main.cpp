@@ -13,7 +13,7 @@ void generateRandomAtoms(AtomRecord& atoms, size_t numAtoms);
 
 int main() {
     AtomRecord coords1;
-    int numAtoms = 100000;
+    int numAtoms = 20000;
     generateRandomAtoms(coords1, numAtoms);
 
     std::cout << "For " << numAtoms << " atoms: \n";

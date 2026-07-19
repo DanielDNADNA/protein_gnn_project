@@ -10,11 +10,11 @@
 namespace py = pybind11;
 
 int main() {
-
+    
     py::scoped_interpreter guard{};
-
+    
     std::string secondsType = "microseconds";
-    std::string fileName = "4V9D.cif.gz";
+    std::string fileName = "1CRN.cif.gz";
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -43,10 +43,18 @@ int main() {
 
     avgDeg /= atoms.atom_degree.size();
 
+
     std::cout << "average degree: " << avgDeg << "\n";
 
-    for (size_t i = 0; i < atoms.x.size(); i++) {
-
+    Edges edges = protein.edges;
+    
+    for (size_t i = 0; i < 10; i++) {
+        std::cout << "index " << i << '\n';
+        std::cout << "coords : \n";
+        std::cout << "x: " << atoms.x[i] << "   ";
+        std::cout << "y: " << atoms.y[i] << "   ";
+        std::cout << "z: " << atoms.z[i] << "   " << '\n';
+        std::cout << "b-factor: " << atoms.b_factor[i] << '\n'; 
     }
     
     return 0;
