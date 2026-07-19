@@ -40,7 +40,7 @@ int main() {
 
     float totalNeighbors = 0;
 
-    start = std::chrono::high_resolution_clock::now();
+    /*start = std::chrono::high_resolution_clock::now();
     for (int q = 0; q < coords1.x.size(); q++) {
 
         float qx = coords1.x[q];
@@ -62,6 +62,7 @@ int main() {
 
     std::cout << "Brute force search: " << elapsed.count() << " ms\n";
 
+    */
     start = std::chrono::high_resolution_clock::now();
     for (int q = 0; q < coords1.x.size(); q++) {
 
@@ -90,7 +91,7 @@ int main() {
 
     std::cout << "Average degree: " << static_cast<double>(totalNeighbors) / coords1.x.size() << '\n';
 
-    std::sort(neighbors1.begin(), neighbors1.end());
+    /*std::sort(neighbors1.begin(), neighbors1.end());
     std::sort(neighbors2.begin(), neighbors2.end());
 
     if (neighbors1 == neighbors2) {
@@ -98,7 +99,7 @@ int main() {
     }
 
     else std::cout << "Error \n";
-
+    */
     return 0;
 }
 

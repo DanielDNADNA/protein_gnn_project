@@ -14,7 +14,7 @@ int main() {
     py::scoped_interpreter guard{};
     
     std::string secondsType = "microseconds";
-    std::string fileName = "1CRN.cif.gz";
+    std::string fileName = "3J3Q.cif.gz";
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -47,15 +47,6 @@ int main() {
     std::cout << "average degree: " << avgDeg << "\n";
 
     Edges edges = protein.edges;
-    
-    for (size_t i = 0; i < 10; i++) {
-        std::cout << "index " << i << '\n';
-        std::cout << "coords : \n";
-        std::cout << "x: " << atoms.x[i] << "   ";
-        std::cout << "y: " << atoms.y[i] << "   ";
-        std::cout << "z: " << atoms.z[i] << "   " << '\n';
-        std::cout << "b-factor: " << atoms.b_factor[i] << '\n'; 
-    }
     
     return 0;
 }

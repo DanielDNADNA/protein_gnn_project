@@ -45,6 +45,8 @@ set(TEST_DATA
     3J3Q.cif.gz
     3J3Y.cif.gz
     4V9D.cif.gz
+    3E7Y.cif.gz
+    1DSB.cif.gz
 )
 
 foreach(FILE ${TEST_DATA})

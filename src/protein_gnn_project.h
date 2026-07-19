@@ -18,6 +18,7 @@ public:
 	py::ssize_t num_atoms;
 	float radius = 5.0f;
 	gemmi::Structure st;
+	int count = 0;
 
 	std::unordered_map<std::string, int> atom_map;
 	

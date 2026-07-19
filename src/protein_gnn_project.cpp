@@ -21,6 +21,7 @@
 
 namespace py = pybind11;
 
+
 //fills in the edges and atoms structs
 Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 
@@ -29,6 +30,7 @@ Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 	countAtoms();
 
 	constructAtoms();
+
 }
 
 //returns: coordinates, node features, target vector, edge indices, and edge attributes
@@ -37,21 +39,21 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>,
 
 	auto coordinates = getCoords();
 
-	auto features = constructNodeFeatures();
+	auto feature = constructNodeFeatures();
 
-	auto targetVector = constructTargetVector();
+	auto target = constructTargetVector();
 
 	auto [edgeIndex, edgeAttr] = constructEdges();
 
 	std::cout << "atoms: " << num_atoms << "\n";
-	return {coordinates, features, targetVector, edgeIndex, edgeAttr};
+	return {coordinates, feature, target, edgeIndex, edgeAttr};
 }
 
 //builds edge indices and edge attributes
 std::tuple<py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::constructEdges() {
 	
 	py::array_t<int64_t>edgeIndex(
-		py::array::ShapeContainer{(py::ssize_t)edges.sourceNode.size(), (py::ssize_t)2 }
+		py::array::ShapeContainer{(py::ssize_t)2, (py::ssize_t)edges.sourceNode.size() }
 	);
 
 	py::array_t<float>edgeAttr (
@@ -64,8 +66,8 @@ std::tuple<py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::constructEdges
 	std::fill(edgeAttr.mutable_data(), edgeAttr.mutable_data() + edgeAttr.size(), 0.0f);
 
 	for (size_t i = 0; i < edges.sourceNode.size(); i++) {
-		viewIndex(i, 0) = edges.sourceNode[i];
-		viewIndex(i, 1) = edges.sinkNode[i];
+		viewIndex(0, i) = edges.sourceNode[i];
+		viewIndex(1, i) = edges.sinkNode[i];
 
 		///0-3 : single, double, triple, delocalized, 4: euclidean distance
 		viewAttr(i, edges.edgeType[i]) = 1.0f;
@@ -265,8 +267,9 @@ py::array_t<float> Parse_mmCIF::getCoords() {
 	}
 
 py::array_t<float> Parse_mmCIF::constructNodeFeatures() {
-		
-	getNodeDegree();
+
+		getNodeDegree();
+
 		//0-5: Atom type, 6-13: Atom locant, 14: atom degree, 15-35: residue type
 		py::array_t<float> nodes(
 			py::array::ShapeContainer{ num_atoms, (py::ssize_t)36 }
@@ -288,13 +291,13 @@ py::array_t<float> Parse_mmCIF::constructNodeFeatures() {
 
 py::array_t<float> Parse_mmCIF::constructTargetVector() {
 		py::array_t<float>targetNode(
-			py::array::ShapeContainer{num_atoms, (py::ssize_t)1 }
+			py::array::ShapeContainer{num_atoms}
 		);
 
-		auto view = targetNode.mutable_unchecked<2>();
+		auto view = targetNode.mutable_unchecked<1>();
 
 		for (py::ssize_t i = 0; i < atoms.b_factor.size(); i++) {
-			view(i, 0) = atoms.b_factor[i];
+			view(i) = atoms.b_factor[i];
 		}
 
 		return targetNode;
@@ -382,6 +385,7 @@ void Parse_mmCIF::constructIntraResidueEdges(const std::unordered_map<std::strin
 					edges.sinkNode.push_back(src);
 					edges.edgeType.push_back(edge_type);
 					edges.euclideanDistance.push_back(euclidDist);
+					
 				}
 			}
 		}
@@ -409,5 +413,4 @@ void Parse_mmCIF::constructInterResidueEdges(int prev_C_global_index, int curren
 
 	return; 
 }
-
 
