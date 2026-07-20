@@ -24,11 +24,23 @@ class Normalizer:
 #standardized over entire dataset
 #applied to: target, euclidean edge distance, atom degree
     def Standardize(self, data, mean, std, col):
-        data[:,col] -= mean
 
-        if (std == 0): std += 1e-8
+        is_row = data.ndim == 1
 
-        data[:,col] /= std
+        if (is_row): 
+            data[col] -= mean
+            if (std == 0): std += 1e-8
+            data[col] /= std
+        
+        else:
+            data[:,col] -= mean
+            if (std == 0): std += 1e-8
+
+            data[:,col] /= std
+
+        
+
+        
 
     
 

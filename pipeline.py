@@ -24,7 +24,7 @@ def main():
     z_stats = Statistics()
 
     for file in protein_files:
-        parser = spatial_engine.ParsemmCIF(str(file))
+        parser = spatial_engine.Parse_mmCIF(str(file))
         coords, features, target, edge_index, edge_attr = parser.exportTensors()
 
         x_stats.WelfordAlgorithm(coords[:,0]),
@@ -39,15 +39,15 @@ def main():
 
         stat_features.WelfordAlgorithm(features[:,15])
 
-        stat_target.WelfordAlgorithm(target[:,0])
+        stat_target.WelfordAlgorithm(target)
         
         stat_edge_attr.WelfordAlgorithm(edge_attr[:,4])
         
 
     for file in protein_files:
-        parser = spatial_engine.ParsemmCIF(str(file))
+        parser = spatial_engine.Parse_mmCIF(str(file))
         coords, features, target, edge_index, edge_attr = parser.exportTensors()
-        tensor_tuple = (coords, features, target, edge_index, edge_attr)
+        tensor_tuple = (coords, target, edge_attr, features)
 
         features_std = stat_features.CalculatePopulationStd()
         target_std = stat_target.CalculatePopulationStd()
