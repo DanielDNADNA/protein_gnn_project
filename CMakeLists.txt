@@ -39,12 +39,7 @@ add_custom_command(TARGET kd_tree_test POST_BUILD
 set(TEST_DATA
     1CRN.cif.gz
     1TIM.cif.gz
-    6QNR.cif
-    6QNR.cif.gz
     8H0R.cif.gz
-    3J3Q.cif.gz
-    3J3Y.cif.gz
-    4V9D.cif.gz
     3E7Y.cif.gz
     1DSB.cif.gz
 )

@@ -9,6 +9,7 @@ class Statistics:
         self.count = 0
         self.mean = 0
         self.M2 = 0
+        self.std = 0
     
     def WelfordAlgorithm(self, col):
         
@@ -28,5 +29,14 @@ class Statistics:
         return self.M2/self.count
 
     def CalculatePopulationStd(self):
-        return np.sqrt(self.CalculatePopulationVariance())
+        self.std = np.sqrt(self.CalculatePopulationVariance())
 
+    def Standardize(self, col):
+
+        self.CalculatePopulationStd()
+
+        col -= self.mean
+        if (self.std == 0): self.std += 1e-8
+        col /= self.std
+        
+        

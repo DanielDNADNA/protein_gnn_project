@@ -44,8 +44,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>,
 	auto target = constructTargetVector();
 
 	auto [edgeIndex, edgeAttr] = constructEdges();
-
-	std::cout << "atoms: " << num_atoms << "\n";
+	
 	return {coordinates, feature, target, edgeIndex, edgeAttr};
 }
 
