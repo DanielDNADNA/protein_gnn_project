@@ -1,5 +1,5 @@
 # Python virtual environment
-.venv/
+.venv312/
 
 # CMake build files
 build/
@@ -19,3 +19,6 @@ __pycache__/
 # Files
 *.cif
 *.cif.gz
+
+# Processed files
+*.pt
