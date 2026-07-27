@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(spatial_core
     src/kd_tree.cpp
+    src/cell_list.cpp
 )
 
 target_include_directories(spatial_core PUBLIC

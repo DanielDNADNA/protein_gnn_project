@@ -3,11 +3,6 @@
 
 #include "atom.h"
 
-struct Neighbor {
-    int atom_index;
-    float distance;
-};
-
 class KDTree {
     public: 
 

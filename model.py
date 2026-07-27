@@ -39,6 +39,5 @@ def main():
             data = data.to(device)
             train.train_epoch(epoch, model, optimizer, data)
 
-
 if __name__ == "__main__":
     main()
