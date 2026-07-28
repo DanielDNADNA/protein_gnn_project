@@ -7,8 +7,7 @@
 #include "atom.h"
 
     KDTree::KDTree(const AtomRecord& atoms)
-    : atoms(atoms),
-      indices(atoms.x.size())
+    : atoms(atoms), indices(atoms.x.size())
     {
         left.reserve(atoms.x.size());
         right.reserve(atoms.x.size());

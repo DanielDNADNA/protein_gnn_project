@@ -1,26 +1,32 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <utility>
+#include <array>
 
 #include "cell_list.h"
 #include "atom.h"
 
+CellList::CellList(AtomRecord& atoms, float cutoff): atoms(atoms), cutoff(cutoff) {
 
-CellList::CellList(const AtomRecord& atoms, float cutoff) {
-
+    cutoff_sq = cutoff*cutoff;
     cell_length_x = cutoff;
     cell_length_y = cutoff;
     cell_length_z = cutoff;
-    setAtoms(atoms);
+    
+    setAtoms();
+    std::vector<uint32_t> flat_list(num_atoms);
+    //empirically; rarely more than 100 neighbors
+    degree.resize(num_atoms);
     setNumBoxes();
-    std::vector<size_t> cell_count = setCellCount(atoms);
+    std::vector<uint32_t> cell_count = setCellCount();
     setBegin(cell_count);
 
-    build(cell_count, atoms);
-
+    build(cell_count, flat_list);
+    sort(flat_list);
 }
 
-void CellList::setAtoms(const AtomRecord& atoms) {
+void CellList::setAtoms() {
 
     num_atoms = atoms.x.size();
 
@@ -50,14 +56,14 @@ void CellList::setNumBoxes() {
     Ny = static_cast<size_t>(std::ceil((y_max-y_min)/cell_length_y));
     Nz = static_cast<size_t>(std::ceil((z_max-z_min)/cell_length_z));
 
-    Nx = std::max(Nx, 1);
-    Ny = std::max(Ny, 1);
-    Nz = std::max(Nz, 1);
+    Nx = std::max(Nx, static_cast<uint32_t> (1));
+    Ny = std::max(Ny, static_cast<uint32_t> (1));
+    Nz = std::max(Nz, static_cast<uint32_t> (1));
 }
 
-std::vector<size_t> CellList::setCellCount(const AtomRecord& atoms) {
+std::vector<uint32_t> CellList::setCellCount() {
 
-    std::vector<size_t> cell_count(Nx * Ny * Nz);
+    std::vector<uint32_t> cell_count(Nx * Ny * Nz);
 
     for (size_t i = 0; i < atoms.x.size(); i++) {
         float x = atoms.x[i];
@@ -83,20 +89,18 @@ size_t CellList::getCellID(float x, float y, float z) const {
     return cell_x + Nx * cell_y + Nx * Ny * cell_z;
 }
 
-void CellList::setBegin(const std::vector<size_t>& cell_count) {
+void CellList::setBegin(const std::vector<uint32_t>& cell_count) {
 
-    begin.reserve(cell_count.size()+1);
+    begin.resize(cell_count.size()+1);
 
-    begin.push_back(0);
+    begin[0] = 0;
 
     for (size_t i = 0; i < cell_count.size(); i++) {
-        begin.push_back(cell_count[i] + begin[i]);
+        begin[i+1] = cell_count[i] + begin[i];
     }
 }
 
-void CellList::build(std::vector<size_t>& cell_count, const AtomRecord& atoms) {
-    
-    flat_list.resize(num_atoms);
+void CellList::build(std::vector<uint32_t>& cell_count, std::vector<uint32_t>& flat_list) {
 
     for (size_t i = 0; i < atoms.x.size(); i++) {
         size_t index = getCellID (atoms.x[i], atoms.y[i], atoms.z[i]);
@@ -104,4 +108,88 @@ void CellList::build(std::vector<size_t>& cell_count, const AtomRecord& atoms) {
     }
 }
 
+//moves the atoms into the order given by flat_list; fewer cache misses during neighborhood checking
+//for this application, neighborhood sort dominates num computations
+void CellList::sort(std::vector<uint32_t>& flat_list) {
+    AtomRecord sortedAtom;
+    sortedAtom.resize(atoms.x.size());
+    
+    for (size_t i = 0; i < flat_list.size(); i++) {
+        size_t index = flat_list[i];
+        sortedAtom.x[i] = atoms.x[index];
+        sortedAtom.y[i] = atoms.y[index];
+        sortedAtom.z[i] = atoms.z[index];
+        sortedAtom.atom_type[i] = atoms.atom_type[index];
+        sortedAtom.locant[i] = atoms.locant[index];
+        sortedAtom.residue_type[i] = atoms.residue_type[index];
+        sortedAtom.atom_index[i] = atoms.atom_index[index];
+        sortedAtom.atom_degree[i] = atoms.atom_degree[index];
+        sortedAtom.b_factor[i] = atoms.b_factor[index];
+    }
 
+    atoms = std::move(sortedAtom);
+}
+
+void CellList::formOffsets () {
+
+    //during iteration, will add each element to the cell_id to find neighbors
+    size_t i = 0; 
+    for (int dz = -1; dz <= 1; dz++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                
+                //excludes trivial case (no movement)
+                if (dx == 0 && dy == 0 && dz == 0) continue;
+
+                offsets[i] = dx + Nx * dy + Nx * Ny * dz;
+                i++;
+            }
+        }
+    }
+    offsets[26] = 0;
+}
+
+//note: for the purposes of this implemetation, self is allowed as a neighbor
+void CellList::checkCell(size_t cell_index, float x, float y, float z, uint16_t& num_neighbors) {
+    
+    size_t start_atom = begin[cell_index];
+    size_t end_atom = begin[cell_index+1];
+
+    for (size_t i = start_atom; i < end_atom; i++) {
+        float dx = atoms.x[i] - x;
+        float dy = atoms.y[i] - y;
+        float dz = atoms.z[i] - z;
+        
+        if (dx*dx + dy*dy + dz*dz <= cutoff_sq) {
+            num_neighbors++;
+        }
+    }
+}
+
+std::vector<uint16_t> CellList::numNeighbors() {
+    
+    formOffsets();
+    
+    for (size_t cell_index = 0; cell_index < begin.size() - 1; cell_index++) {
+        
+        for (size_t atom = begin[cell_index]; atom < begin[cell_index+1]; atom++) {
+            
+            uint16_t num_neighbors = 0;
+            float x = atoms.x[atom];
+            float y = atoms.y[atom];
+            float z = atoms.z[atom];
+
+            for (size_t k = 0; k < 27; k++) {
+                
+                int next_index = static_cast<int>(cell_index) + offsets[k];
+
+                if (next_index < 0 || next_index >= static_cast<int>(begin.size()-1)) continue;
+                checkCell(next_index, x, y, z, num_neighbors);
+            }
+
+            degree[atom] = num_neighbors;
+        }
+    }
+    
+    return degree;
+}
