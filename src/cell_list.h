@@ -14,6 +14,8 @@ class CellList {
 
     std::vector<uint16_t> numNeighbors();
 
+    std::vector<uint16_t> degreesInOriginalOrder() const;
+
     private: 
     //edits: num_atoms, x, y, z max and min, calls set setNumBoxes
     void setAtoms();

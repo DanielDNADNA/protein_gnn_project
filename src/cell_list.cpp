@@ -3,11 +3,14 @@
 #include <cmath>
 #include <utility>
 #include <array>
+#include <iostream>
+#include <cassert>
 
 #include "cell_list.h"
 #include "atom.h"
 
 CellList::CellList(AtomRecord& atoms, float cutoff): atoms(atoms), cutoff(cutoff) {
+
 
     cutoff_sq = cutoff*cutoff;
     cell_length_x = cutoff;
@@ -15,9 +18,10 @@ CellList::CellList(AtomRecord& atoms, float cutoff): atoms(atoms), cutoff(cutoff
     cell_length_z = cutoff;
     
     setAtoms();
+
     std::vector<uint32_t> flat_list(num_atoms);
-    //empirically; rarely more than 100 neighbors
     degree.resize(num_atoms);
+    
     setNumBoxes();
     std::vector<uint32_t> cell_count = setCellCount();
     setBegin(cell_count);
@@ -113,7 +117,7 @@ void CellList::build(std::vector<uint32_t>& cell_count, std::vector<uint32_t>& f
 void CellList::sort(std::vector<uint32_t>& flat_list) {
     AtomRecord sortedAtom;
     sortedAtom.resize(atoms.x.size());
-    
+
     for (size_t i = 0; i < flat_list.size(); i++) {
         size_t index = flat_list[i];
         sortedAtom.x[i] = atoms.x[index];
@@ -123,7 +127,6 @@ void CellList::sort(std::vector<uint32_t>& flat_list) {
         sortedAtom.locant[i] = atoms.locant[index];
         sortedAtom.residue_type[i] = atoms.residue_type[index];
         sortedAtom.atom_index[i] = atoms.atom_index[index];
-        sortedAtom.atom_degree[i] = atoms.atom_degree[index];
         sortedAtom.b_factor[i] = atoms.b_factor[index];
     }
 
@@ -192,4 +195,17 @@ std::vector<uint16_t> CellList::numNeighbors() {
     }
     
     return degree;
+}
+
+std::vector<uint16_t> CellList::degreesInOriginalOrder() const {
+    std::vector<uint16_t> reorderedNeighbors(num_atoms);
+
+    assert(atoms.atom_index.size() == atoms.atom_degree.size());
+    
+    for (size_t i = 0; i < atoms.atom_index.size(); i++) {
+        uint32_t index = atoms.atom_index[i];
+        reorderedNeighbors[index] = atoms.atom_degree[i];
+    }
+
+    return reorderedNeighbors;
 }

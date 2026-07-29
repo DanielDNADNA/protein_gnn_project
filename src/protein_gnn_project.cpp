@@ -12,17 +12,15 @@
 #include <gemmi/mmcif.hpp>
 #include <gemmi/chemcomp.hpp>
 #include <cmath>
-#include <chrono>
-#include <iostream>
 #include "protein_gnn_project.h"
 #include "atom.h"
 #include "edges.h"
 #include "kd_tree.h"
+#include "cell_list.h"
 
 namespace py = pybind11;
 
-
-//fills in the edges and atoms structs
+//fills in the edges and atoms structs, except for degree
 Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 
 	openFile(filePath);
@@ -30,13 +28,14 @@ Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 	countAtoms();
 
 	constructAtoms();
-
 }
 
 //returns: coordinates, node features, target vector, edge indices, and edge attributes
 std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>, 
 	py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::exportTensors() {
 
+	degree();
+	
 	auto coordinates = getCoords();
 
 	auto feature = constructNodeFeatures();
@@ -44,7 +43,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>,
 	auto target = constructTargetVector();
 
 	auto [edgeIndex, edgeAttr] = constructEdges();
-	
+
 	return {coordinates, feature, target, edgeIndex, edgeAttr};
 }
 
@@ -147,6 +146,7 @@ void Parse_mmCIF::countAtoms() {
 	}
 
 //also builds edges
+//fills all but the degree element
 void Parse_mmCIF::constructAtoms() {
 
 		atoms.reserve(static_cast<size_t>(num_atoms));
@@ -229,12 +229,14 @@ void Parse_mmCIF::constructAtoms() {
 				}
 			}
 		}
+
 	}
 
+//now obsolete. check degree() for the used implementation (uses cell-list)
 void Parse_mmCIF::getNodeDegree() {
-	
+
 	KDTree tree(atoms); 
-	
+
 	std::vector<int> neighbors;
 	neighbors.reserve(64);
 
@@ -244,6 +246,7 @@ void Parse_mmCIF::getNodeDegree() {
 			neighbors);
 		atoms.atom_degree.push_back(nodeDegree);
 	}
+
 }
 
 //matrix of 3D coordinates of the nodes; [number of nodes, 3]
@@ -267,12 +270,11 @@ py::array_t<float> Parse_mmCIF::getCoords() {
 
 py::array_t<float> Parse_mmCIF::constructNodeFeatures() {
 
-		getNodeDegree();
-
 		//0-5: Atom type, 6-13: Atom locant, 14: atom degree, 15-35: residue type
 		py::array_t<float> nodes(
 			py::array::ShapeContainer{ num_atoms, (py::ssize_t)36 }
 		);
+		
 		//initialize to 0
 		std::fill(nodes.mutable_data(), nodes.mutable_data() + nodes.size(), 0.0f);
 		
@@ -411,5 +413,15 @@ void Parse_mmCIF::constructInterResidueEdges(int prev_C_global_index, int curren
 	edges.sourceNode.push_back(prev_C_global_index);
 
 	return; 
+}
+
+void Parse_mmCIF::degree() {
+	
+	CellList cell(atoms, 5.0f);
+
+	std::vector<uint16_t> neighbors = cell.numNeighbors();
+	atoms.atom_degree = std::move(neighbors);
+
+	return;
 }
 

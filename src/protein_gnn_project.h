@@ -68,4 +68,8 @@ public:
 
 	void constructInterResidueEdges(int prev_C_global_index, int current_N_index);
 
+	void degree();
+
+	void save(const std::string& filename) const;
+	
 };

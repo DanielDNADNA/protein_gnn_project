@@ -165,9 +165,5 @@
         
         radiusSearch(qx, qy, qz, radius, 0, neighbors, 0);
 
-        //radius search includes self as neighbor; excluded by spatial degree
-        if (neighbors.size() > 0) {
-            return neighbors.size() - 1 ;
-        }
-        else return 0;
+        return neighbors.size();
     }
