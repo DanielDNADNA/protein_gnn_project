@@ -1,6 +1,6 @@
-from metalayer import ProteinGNN
+from ml.metalayer import ProteinGNN
 import train as train
-from dataset import ProteinDataset
+from ml.dataset import ProteinDataset
 
 import torch
 from torch.optim import AdamW

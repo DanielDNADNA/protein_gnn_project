@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch_geometric.nn import GATv2Conv
 from torch_geometric.nn import MetaLayer
 
-from prediction_head import BFactorHead
+from ml.prediction_head import BFactorHead
 
 class ProteinGNN(torch.nn.Module):
     def __init__(self, edge_dim, node_dim):
