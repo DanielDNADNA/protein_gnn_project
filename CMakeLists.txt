@@ -122,12 +122,12 @@ add_executable(cell_list_test
 
 link_pipeline_dependencies(cell_list_test)
 
-add_executable(validate
-    tests/validate.cpp
+add_executable(evaluate
+    tests/evaluation.cpp
     src/protein_gnn_project.cpp
 )
 
-target_link_libraries(validate PRIVATE
+target_link_libraries(evaluate PRIVATE
     spatial_core
     gemmi_cpp
     ZLIB::ZLIB
@@ -135,10 +135,10 @@ target_link_libraries(validate PRIVATE
     Python3::Python
 )
 
-add_custom_command(TARGET validate POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_SOURCE_DIR}/tests/data/processed/3J3Q_atoms.bin
-        $<TARGET_FILE_DIR:validate>
+add_custom_command(TARGET evaluate POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/tests/data/processed
+        $<TARGET_FILE_DIR:evaluate>/processed
 )
 
 # -----------------------------

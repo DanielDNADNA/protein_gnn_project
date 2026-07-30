@@ -10,7 +10,6 @@
 #include <gemmi/cif.hpp>
 #include <gemmi/model.hpp>
 #include <gemmi/mmcif.hpp>
-#include <gemmi/chemcomp.hpp>
 #include <cmath>
 #include "protein_gnn_project.h"
 #include "atom.h"

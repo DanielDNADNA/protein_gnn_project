@@ -12,26 +12,36 @@ class Evaluation {
 
     public:
 
-    AtomRecord atoms2; //for use by the bruteforce search & KD-tree
-    std::vector<uint16_t> reorderedNeighbors;
-    std::vector<uint16_t> tree_neighbors;
-    std::vector<uint16_t> brute_force_neighbors;
-    
-    std::optional<KDTree> kdTree;
-    std::optional<CellList> cellList;
-
     Evaluation::Evaluation(AtomRecord& atoms, const std::string& fileName);
 
-    void buildCellList(AtomRecord& atoms2);
-    void buildTree(AtomRecord& atoms2);
+    void buildCellList();
+    void buildTree();
 
-    void getBruteForceNeighbors();
-    void getTreeNeighbors();
-    void getCellNeighbors();
+    std::vector<uint16_t> getBruteForceNeighbors();
+    std::vector<uint16_t> getTreeNeighbors();
+    std::vector<uint16_t> getCellNeighbors();
 
-    bool validate(const std::vector<uint16_t>& base_neighbor, const std::vector<uint16_t>& compare_neighbor);  
+    void printBruteForceTime();
+    void printTreeTime();
+    void printCellTime();
+
+    bool validate(const std::vector<uint16_t>& base_neighbor, 
+        const std::vector<uint16_t>& compare_neighbor);  
+
+    AtomRecord& atoms; 
+    AtomRecord atoms2;
+    std::optional<KDTree> kdTree;
+    double tree_build_time;
+    double tree_search_time;
+
+    std::optional<CellList> cellList;
+    double cell_list_build_time;
+    double cell_list_search_time;
+
+    double brute_force_time;
     
     private: 
+
     float cutoff;
     float cutoff_sq;
 };
