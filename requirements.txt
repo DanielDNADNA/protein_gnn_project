@@ -4,6 +4,7 @@ torch-scatter==2.1.2+pt211cu128
 torch-sparse==0.6.18+pt211cu128
 torch-cluster==1.6.3+pt211cu128
 pyg-lib==0.7.0+pt211cu128
+rcsb-api==1.7.3
 
 gemmi==0.7.5
 numpy==2.4.4

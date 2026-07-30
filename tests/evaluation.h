@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <string>
 #include <fstream>
@@ -5,14 +7,14 @@
 #include <optional>
 
 #include "atom.h"
-#include "kd_tree.cpp"
-#include "cell_list.cpp"
+#include "kd_tree.h"
+#include "cell_list.h"
 
 class Evaluation {
 
     public:
 
-    Evaluation::Evaluation(AtomRecord& atoms, const std::string& fileName);
+    Evaluation(AtomRecord& atoms, const std::string& fileName);
 
     void buildCellList();
     void buildTree();

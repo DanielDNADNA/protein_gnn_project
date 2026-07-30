@@ -1,5 +1,5 @@
 from ml.metalayer import ProteinGNN
-import train as train
+import ml.train as train
 from ml.dataset import ProteinDataset
 
 import torch

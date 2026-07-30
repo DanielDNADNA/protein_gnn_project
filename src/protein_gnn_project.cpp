@@ -19,7 +19,7 @@
 
 namespace py = pybind11;
 
-//fills in the edges and atoms structs, except for degree
+//fills in the edges and atoms structs
 Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 
 	openFile(filePath);
@@ -27,13 +27,13 @@ Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 	countAtoms();
 
 	constructAtoms();
+
+	degree();
 }
 
 //returns: coordinates, node features, target vector, edge indices, and edge attributes
 std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>, 
 	py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::exportTensors() {
-
-	degree();
 	
 	auto coordinates = getCoords();
 
