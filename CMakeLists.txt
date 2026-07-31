@@ -30,7 +30,6 @@ FetchContent_MakeAvailable(gemmi)
 
 find_package(ZLIB REQUIRED)
 
-# Python only needed for pybind module
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 FetchContent_Declare(
@@ -41,9 +40,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(pybind11)
 
-
 # -----------------------------
-# Core C++ library
+# Core library
 # -----------------------------
 
 add_library(spatial_core
@@ -55,26 +53,42 @@ target_include_directories(spatial_core PUBLIC
     src
 )
 
+# -----------------------------
+# Helper function for executables
+# -----------------------------
+
+function(add_spatial_executable target)
+
+    add_executable(${target}
+        ${ARGN}
+        src/protein_gnn_project.cpp
+    )
+
+    target_link_libraries(${target}
+        PRIVATE
+        spatial_core
+        gemmi_cpp
+        ZLIB::ZLIB
+        pybind11::embed
+        Python3::Python
+    )
+
+    target_include_directories(${target}
+        PRIVATE
+        src
+        ${Python3_INCLUDE_DIRS}
+    )
+
+endfunction()
 
 # -----------------------------
 # Pipeline test
 # -----------------------------
 
-add_executable(pipeline_test
+add_spatial_executable(
+    pipeline_test
     tests/pipeline_test_main.cpp
-    src/protein_gnn_project.cpp
 )
-
-target_link_libraries(pipeline_test PRIVATE
-    spatial_core
-    gemmi_cpp
-    ZLIB::ZLIB
-)
-
-target_include_directories(pipeline_test PRIVATE
-    src
-)
-
 
 add_custom_command(TARGET pipeline_test POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -82,60 +96,72 @@ add_custom_command(TARGET pipeline_test POST_BUILD
         $<TARGET_FILE_DIR:pipeline_test>/benchmark_raw
 )
 
-
 # -----------------------------
 # Evaluation benchmark
 # -----------------------------
 
-add_executable(evaluate
+add_spatial_executable(
+    evaluate
     tests/evaluation.cpp
-    src/protein_gnn_project.cpp
+    tests/loader.cpp
 )
 
-target_link_libraries(evaluate PRIVATE
-    spatial_core
-    gemmi_cpp
-    ZLIB::ZLIB
-)
-
-target_include_directories(evaluate PRIVATE
-    src
-)
-
-
-# Copy preprocessed binary benchmark files
 add_custom_command(TARGET evaluate POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/data/benchmark_bin
         $<TARGET_FILE_DIR:evaluate>/benchmark_bin
 )
 
+# -----------------------------
+# Save benchmark parser
+# -----------------------------
+
+add_spatial_executable(
+    save_pdb_files
+    tests/save_pdb_files.cpp
+    tests/evaluation.cpp
+)
+
+add_custom_command(TARGET save_pdb_files POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/data/benchmark_raw
+        $<TARGET_FILE_DIR:save_pdb_files>/benchmark_raw
+)
+
+target_compile_definitions(save_pdb_files PRIVATE
+    PROJECT_DATA_DIR="${CMAKE_SOURCE_DIR}/data"
+    BENCHMARK_RAW_DIR="${CMAKE_SOURCE_DIR}/data/benchmark_raw"
+    BENCHMARK_BIN_DIR="${CMAKE_SOURCE_DIR}/data/benchmark_bin"
+)
 
 # -----------------------------
-# Python extension module
+# Python extension
 # -----------------------------
 
-pybind11_add_module(spatial_engine
+pybind11_add_module(
+    spatial_engine
     src/bindings.cpp
     src/protein_gnn_project.cpp
 )
 
-target_link_libraries(spatial_engine PRIVATE
+target_link_libraries(spatial_engine
+    PRIVATE
     spatial_core
-    pybind11::module
-    Python3::Module
     gemmi_cpp
     ZLIB::ZLIB
+    pybind11::module
+    Python3::Module
 )
 
-target_include_directories(spatial_engine PRIVATE
+target_include_directories(spatial_engine
+    PRIVATE
     src
+    ${Python3_INCLUDE_DIRS}
 )
 
 set_target_properties(spatial_engine PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
-
 
 # -----------------------------
 # Debug info

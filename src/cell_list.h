@@ -14,7 +14,7 @@ class CellList {
 
     std::vector<uint16_t> numNeighbors();
 
-    std::vector<uint16_t> degreesInOriginalOrder() const;
+    std::vector<uint16_t> degreesInOriginalOrder(const std::vector<uint16_t>& degree) const;
 
     private: 
     //edits: num_atoms, x, y, z max and min, calls set setNumBoxes
@@ -34,7 +34,7 @@ class CellList {
     void sort(std::vector<uint32_t>& flat_list);
 
     //Fills array with IDs of the 26 surrounding cell IDs
-    void formOffsets ();
+    uint16_t checkNeighboringCells (size_t cell_index, float x, float y, float z);
     
     //Adds neighbors to neighbors vector
     void checkCell(size_t cell_index, float x, float y, float z, uint16_t& num_neighbors);
@@ -57,9 +57,6 @@ class CellList {
     float cutoff;
 
     float cutoff_sq;
-
-    //gives indices of the surrounding 26 cells when added to the cell_index
-    std::array<int, 27> offsets;
 
     std::vector<uint16_t> degree;
 };

@@ -4,6 +4,9 @@
 #include <fstream>
 #include <cstdint>
 #include <cassert>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 struct AtomRecord {
 	
@@ -65,10 +68,10 @@ struct AtomRecord {
     	assert(b_factor.size() == n);
 	}
 	
-	void save(const std::string& filename) const {
+	void save(const fs::path& filepath) const {
 
 		//write bytes into the file
-		std::ofstream out(filename, std::ios::binary);
+		std::ofstream out(filepath, std::ios::binary);
 		if (!out) {
             throw std::runtime_error("Cannot open file for writing");
         }
@@ -86,6 +89,12 @@ struct AtomRecord {
 				vec.size() * sizeof(vec[0])
             );
 		};
+
+		for (size_t i = 0; i < atom_index.size(); i++) {
+    		if (atom_index[i] != i) {
+        		throw std::runtime_error("Attempting to save reordered AtomRecord");
+    		}
+		}	
 
 		writeVector(x);
         writeVector(y);

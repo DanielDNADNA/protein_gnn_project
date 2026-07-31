@@ -6,6 +6,7 @@
 #include <string_view>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <gemmi/mmread.hpp>
 #include <gemmi/mmread_gz.hpp>
 #include <gemmi/cif.hpp>
 #include <gemmi/model.hpp>
@@ -18,6 +19,7 @@
 #include "cell_list.h"
 
 namespace py = pybind11;
+namespace fs = std::filesystem;
 
 //fills in the edges and atoms structs
 Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
@@ -27,14 +29,13 @@ Parse_mmCIF::Parse_mmCIF(const std::string& filePath) {
 	countAtoms();
 
 	constructAtoms();
-
-	degree();
 }
 
 //returns: coordinates, node features, target vector, edge indices, and edge attributes
 std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>, 
 	py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::exportTensors() {
-	
+
+	degree();
 	auto coordinates = getCoords();
 
 	auto feature = constructNodeFeatures();
@@ -75,7 +76,7 @@ std::tuple<py::array_t<int64_t>, py::array_t<float>> Parse_mmCIF::constructEdges
 }
 
 void Parse_mmCIF::openFile(const std::string& filePath) {
-		st = gemmi::read_structure_gz(filePath, gemmi::CoorFormat::Detect);
+	st = gemmi::read_structure_file(filePath, gemmi::CoorFormat::Detect);
 }
 
 	//atom.element.name()

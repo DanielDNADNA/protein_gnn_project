@@ -12,7 +12,6 @@
 #include "kd_tree.h"
 #include "evaluation.h"
 
-
 Evaluation::Evaluation(AtomRecord& atoms, const std::string& fileName) : atoms(atoms) {
 
     std::cout << "For protein " << fileName << " with " << atoms.x.size() << " atoms: \n";
@@ -70,6 +69,7 @@ std::vector<uint16_t> Evaluation::getBruteForceNeighbors() {
             }
         }
     }
+    std::cout << " ";
 
     auto end = std::chrono::steady_clock::now();
     auto ms = std::chrono::duration<double, std::milli>(end-start).count();
@@ -117,15 +117,16 @@ std::vector<uint16_t> Evaluation::getCellNeighbors() {
 
     auto start = std::chrono::steady_clock::now();
 
-    std::vector<uint16_t> reorderedNeighbors = cellList->numNeighbors();
+    std::vector<uint16_t> neighbors = cellList->numNeighbors();
 
     auto end = std::chrono::steady_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 
     auto ms = std::chrono::duration<double, std::milli>(end-start).count();
 
+    cell_list_search_time = ms;
+
     //purely to make pairwise comparison possible; not part of native cell list usage
-    reorderedNeighbors = cellList->degreesInOriginalOrder();
+    std::vector<uint16_t>reorderedNeighbors = cellList->degreesInOriginalOrder(neighbors);
     return reorderedNeighbors;
 }
 
@@ -137,6 +138,8 @@ bool Evaluation::validate(const std::vector<uint16_t>& base_neighbor,
     for (size_t i = 0; i < compare_neighbor.size(); i++) {
         if (compare_neighbor[i] != base_neighbor[i]) {
             std::cout << "Mismatch at index " << i << '\n';
+            std::cout << "Base case: " << base_neighbor[i] << "\n";
+            std::cout << "Compare case: " << compare_neighbor[i] << "\n";
             return false;
         }
     }
@@ -155,6 +158,6 @@ void Evaluation::printTreeTime() {
 }
 
 void Evaluation::printBruteForceTime() {
-    std::cout << "Brute force search: " << brute_force_time << "milliseconds\n";
+    std::cout << "Brute force search: " << brute_force_time << " milliseconds\n";
 }
 

@@ -158,7 +158,6 @@
         return;
     }
 
-    //.reserve will be done outside of the function
     size_t KDTree::getNodeDegree (float qx, float qy, float qz, float radius, std::vector<int>& neighbors) {
         neighbors.clear();
         neighbors.reserve(50);

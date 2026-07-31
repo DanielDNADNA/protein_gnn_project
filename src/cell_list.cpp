@@ -10,8 +10,7 @@
 #include "atom.h"
 
 CellList::CellList(AtomRecord& atoms, float cutoff): atoms(atoms), cutoff(cutoff) {
-
-
+    
     cutoff_sq = cutoff*cutoff;
     cell_length_x = cutoff;
     cell_length_y = cutoff;
@@ -27,6 +26,7 @@ CellList::CellList(AtomRecord& atoms, float cutoff): atoms(atoms), cutoff(cutoff
     setBegin(cell_count);
 
     build(cell_count, flat_list);
+
     sort(flat_list);
 }
 
@@ -39,7 +39,7 @@ void CellList::setAtoms() {
     y_max = atoms.y[0];
     y_min = atoms.y[0]; 
     z_max = atoms.z[0];
-    z_min = atoms.z[0];;
+    z_min = atoms.z[0];
 
     for (size_t i = 1; i < atoms.x.size(); i++) {
 
@@ -133,24 +133,34 @@ void CellList::sort(std::vector<uint32_t>& flat_list) {
     atoms = std::move(sortedAtom);
 }
 
-void CellList::formOffsets () {
+//derive the x, y, z cell coords and then add 1/-1 to each to find the 
+//adjacent and diagonal rows
+uint16_t CellList::checkNeighboringCells (size_t cell_index, float x, float y, float z) {
+    
+    int cell_x = cell_index % Nx;
+    int cell_y = (cell_index / Nx) % Ny;
+    int cell_z = cell_index / (Nx * Ny);
+    
+    uint16_t num_neighbors = 0; 
 
-    //during iteration, will add each element to the cell_id to find neighbors
-    size_t i = 0; 
-    for (int dz = -1; dz <= 1; dz++) {
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                
-                //excludes trivial case (no movement)
-                if (dx == 0 && dy == 0 && dz == 0) continue;
+    for (int dz = -1; dz <= 1; dz++) 
+    for (int dy = -1; dy <= 1; dy++)
+    for (int dx = -1; dx <= 1; dx++) {
+        int nx = cell_x + dx;
+        int ny = cell_y + dy; 
+        int nz = cell_z + dz; 
 
-                offsets[i] = dx + Nx * dy + Nx * Ny * dz;
-                i++;
-            }
-        }
+        //filter invalid neighbors (boundary cases)
+        if (nx < 0 || nx >= Nx) continue;
+        if (ny < 0 || ny >= Ny) continue;
+        if (nz < 0 || nz >= Nz) continue;
+
+        size_t neighbor = nx + ny * Nx + Nx * Ny * nz;
+        checkCell(neighbor, x, y, z, num_neighbors);
     }
-    offsets[26] = 0;
-}
+
+    return num_neighbors;
+ }
 
 //note: for the purposes of this implemetation, self is allowed as a neighbor
 void CellList::checkCell(size_t cell_index, float x, float y, float z, uint16_t& num_neighbors) {
@@ -171,8 +181,6 @@ void CellList::checkCell(size_t cell_index, float x, float y, float z, uint16_t&
 
 std::vector<uint16_t> CellList::numNeighbors() {
     
-    formOffsets();
-    
     for (size_t cell_index = 0; cell_index < begin.size() - 1; cell_index++) {
         
         for (size_t atom = begin[cell_index]; atom < begin[cell_index+1]; atom++) {
@@ -182,14 +190,7 @@ std::vector<uint16_t> CellList::numNeighbors() {
             float y = atoms.y[atom];
             float z = atoms.z[atom];
 
-            for (size_t k = 0; k < 27; k++) {
-                
-                int next_index = static_cast<int>(cell_index) + offsets[k];
-
-                if (next_index < 0 || next_index >= static_cast<int>(begin.size()-1)) continue;
-                checkCell(next_index, x, y, z, num_neighbors);
-            }
-
+            num_neighbors = checkNeighboringCells(cell_index, x, y, z);
             degree[atom] = num_neighbors;
         }
     }
@@ -197,14 +198,14 @@ std::vector<uint16_t> CellList::numNeighbors() {
     return degree;
 }
 
-std::vector<uint16_t> CellList::degreesInOriginalOrder() const {
+std::vector<uint16_t> CellList::degreesInOriginalOrder(const std::vector<uint16_t>& degree) 
+    const {
+
     std::vector<uint16_t> reorderedNeighbors(num_atoms);
 
-    assert(atoms.atom_index.size() == atoms.atom_degree.size());
-    
     for (size_t i = 0; i < atoms.atom_index.size(); i++) {
         uint32_t index = atoms.atom_index[i];
-        reorderedNeighbors[index] = atoms.atom_degree[i];
+        reorderedNeighbors[index] = degree[i];
     }
 
     return reorderedNeighbors;

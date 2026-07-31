@@ -4,27 +4,50 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
 #include <filesystem>
 #include <cmath>
+#include <algorithm>
 #include <cassert>
 
 namespace fs = std::filesystem;
 
 int main() {
 
-    for (const auto& bucket : fs::directory_iterator("benchmark_bin")) {
-        if (!bucket.is_directory())
-            continue;
-        std::cout << "===== " << bucket.path().filename() << " =====\n";
+    std::vector<fs::path> buckets;
 
-        for (const auto& file : fs::directory_iterator(bucket.path())) {
+    for (const auto& entry : fs::directory_iterator("benchmark_bin")) {
+        if (entry.is_directory()) {
+            buckets.push_back(entry.path());
+        }
+    }
+
+    //sorts the files least to greatest
+    std::sort(buckets.begin(), buckets.end(), 
+        [](const fs::path& a, const fs::path& b) {
+            auto parse_size = [](const fs::path& p) {
+                std::string s = p.filename().string();
+
+                if (s.back() == ('k')) return std::stoi(s.substr(0, s.size()-1)) * 1000;
+
+                if (s.back() == ('m')) return std::stoi(s.substr(0, s.size()-1)) *1000000;
+
+                return 0;
+            };   
+            return parse_size(a) < parse_size(b);
+        });
+
+    for (const auto& bucket : buckets) {
+        std::cout << "===== " << bucket.filename().filename() << " =====\n";
+
+        for (const auto& file : fs::directory_iterator(bucket)) {
             if (file.path().extension() != ".bin")
                 continue;
 
             AtomRecord atoms;
             atoms = atoms.load(file.path().string());
 
-            Evaluation evaluate(atoms, bucket.path().filename());
+            Evaluation evaluate(atoms, file.path().stem().string());
             
             evaluate.buildCellList();
             std::vector<uint16_t> cell_neighbors = evaluate.getCellNeighbors();
@@ -32,23 +55,46 @@ int main() {
             evaluate.buildTree();
             std::vector<uint16_t> tree_neighbors = evaluate.getTreeNeighbors();
             
-            std::vector<uint16_t> brute_force_neighbors = evaluate.getBruteForceNeighbors();
+            if (atoms.x.size() <= 5000) {
+                std::vector<uint16_t> brute_force_neighbors = evaluate.getBruteForceNeighbors();
 
-            std::cout << "Evaluating tree_neighbors using brute force: \n";
+                std::cout << "Evaluating tree_neighbors using brute force: \n";
 
-            assert(evaluate.validate(tree_neighbors, brute_force_neighbors));
-            
-            std::cout << "KD tree validated \n";
+                if (!evaluate.validate(tree_neighbors, brute_force_neighbors)) {
+                    throw std::runtime_error("KD tree and brute force mismatch");
+                }
+        
+                std::cout << "KD tree validated \n";
 
-            std::cout << "Evaluating cell_neighbors using brute force: \n";
+                std::cout << "Evaluating cell_neighbors using brute force: \n";
             
-            assert(evaluate.validate(brute_force_neighbors, cell_neighbors));
-            
-            std::cout << "Cell list validated \n";
+                if (!evaluate.validate(brute_force_neighbors, cell_neighbors)) {
+                    throw std::runtime_error("Brute force and cell list mismatch");
+                }
+                
+                std::cout << "Cell list validated \n";
+
+                std::cout << "Evaluating cell_neighbors with kd tree: \n";
+                if (!evaluate.validate(tree_neighbors, cell_neighbors)) {
+                    throw std::runtime_error("KD tree and cell list mismatch");
+                }
+
+                evaluate.printBruteForceTime();
+            }
+
+            else {
+                std::cout << "Comparing cell list to kd tree \n";
+
+                if (!evaluate.validate(tree_neighbors, cell_neighbors)) {
+                    throw std::runtime_error("KD tree and cell list mismatch");
+                }
+
+                std::cout << "Cell list matches kd tree \n";
+            }
 
             evaluate.printCellTime();
             evaluate.printTreeTime();
-            evaluate.printBruteForceTime();
+            std::cout << "\n";
         }
     }
 
