@@ -5,6 +5,7 @@
 #include <array>
 #include <iostream>
 #include <cassert>
+#include <omp.h>
 
 #include "cell_list.h"
 #include "atom.h"
@@ -180,7 +181,25 @@ void CellList::checkCell(size_t cell_index, float x, float y, float z, uint16_t&
 }
 
 std::vector<uint16_t> CellList::numNeighbors() {
+    for (size_t cell_index = 0; cell_index < begin.size() - 1; cell_index++) {
+        
+        for (size_t atom = begin[cell_index]; atom < begin[cell_index+1]; atom++) {
+            
+            uint16_t num_neighbors = 0;
+            float x = atoms.x[atom];
+            float y = atoms.y[atom];
+            float z = atoms.z[atom];
+
+            num_neighbors = checkNeighboringCells(cell_index, x, y, z);
+            degree[atom] = num_neighbors;
+        }
+    }
     
+    return degree;
+}
+
+std::vector<uint16_t> CellList::parallelNumNeighbors() {
+    #pragma omp parallel for
     for (size_t cell_index = 0; cell_index < begin.size() - 1; cell_index++) {
         
         for (size_t atom = begin[cell_index]; atom < begin[cell_index+1]; atom++) {

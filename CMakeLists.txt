@@ -10,6 +10,8 @@ add_compile_options(
     -march=native
 )
 
+find_package(OpenMP REQUIRED)
+
 # -----------------------------
 # Dependencies
 # -----------------------------
@@ -51,6 +53,11 @@ add_library(spatial_core
 
 target_include_directories(spatial_core PUBLIC
     src
+)
+
+target_link_libraries(spatial_core
+    PUBLIC
+    OpenMP::OpenMP_CXX
 )
 
 # -----------------------------

@@ -14,6 +14,8 @@ class CellList {
 
     std::vector<uint16_t> numNeighbors();
 
+    std::vector<uint16_t> parallelNumNeighbors();
+
     std::vector<uint16_t> degreesInOriginalOrder(const std::vector<uint16_t>& degree) const;
 
     private: 

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <utility>
 #include <cassert>
+#include <stdexcept>
 
 #include "atom.h"
 #include "protein_gnn_project.h"
@@ -15,12 +16,108 @@
 Evaluation::Evaluation(AtomRecord& atoms, const std::string& fileName) : atoms(atoms) {
 
     std::cout << "For protein " << fileName << " with " << atoms.x.size() << " atoms: \n";
-    
-    assert(atoms.x.size() == atoms.y.size());
-    assert(atoms.y.size() == atoms.z.size());
 
     cutoff = 5.0f;
     cutoff_sq = cutoff*cutoff;
+}
+
+void Evaluation::evaluateAlgorithms (std::initializer_list<Algorithm> algorithms) {
+
+    for (const auto algorithm : algorithms) {
+        switch (algorithm) {
+            case Algorithm::BruteForce: {
+                std::vector<uint16_t> neighbors = getBruteForceNeighbors();
+                printBruteForceTime();
+                brute_force_neighbors = std::move(neighbors);
+                break;
+            }
+
+            case Algorithm::KDTree: {
+                buildTree();
+                std::vector<uint16_t> neighbors = getTreeNeighbors();
+                printTreeTime();
+                tree_neighbors = std::move(neighbors);
+                break; 
+            }
+
+            case Algorithm::CellList: {
+                buildCellList();
+                std::vector<uint16_t> neighbors = getCellNeighbors();
+                printCellTime();
+                cell_neighbors = std::move(neighbors);
+                break;
+            }
+
+            case Algorithm::CellListOMP: {
+                buildCellList();
+                std::vector<uint16_t> neighbors = getOMPCellNeighbors();
+                printOMPCellTime();
+                OMP_cell_neighbors = std::move(neighbors);
+                break;
+            }
+
+            case Algorithm::CudaCellList: {
+                throw std::runtime_error("CUDA Cell List not implemented yet");
+                break;
+            }
+        }
+    }
+}
+
+void Evaluation::validateAlgorithms(std::initializer_list<Algorithm> algorithms) {
+    if (algorithms.size() < 2) 
+        throw std::runtime_error("Must have 2 or more algorithms to validate");
+
+    auto baseline = *(algorithms.begin());
+
+    std::vector<uint16_t> baseline_vector = match_neighbor(baseline);
+
+    size_t i = 1; 
+
+    for (auto next = std::next(algorithms.begin()); next != algorithms.end(); next++) {
+        
+        std::vector<uint16_t> comparison = match_neighbor(*next);
+
+        if (!validate(baseline_vector, comparison)) {
+            std::cerr << "Algorithm index " << i << " mismatches baseline\n"; 
+            throw std::runtime_error("Error: mismatch");
+        }
+
+        i++;
+    }
+}
+
+std::vector<uint16_t> Evaluation::match_neighbor(Algorithm algorithm) {
+    
+    std::vector<uint16_t> neighbors;
+
+    switch (algorithm) {
+    
+        case Algorithm::BruteForce: 
+        neighbors = brute_force_neighbors;
+        break;
+
+        case Algorithm::KDTree:
+        neighbors = tree_neighbors;
+        break;
+
+        case Algorithm::CellList: 
+        neighbors = cell_neighbors;
+        break;
+
+        case Algorithm::CellListOMP: 
+        neighbors = OMP_cell_neighbors;
+        break;
+
+        case Algorithm::CudaCellList:
+        throw std::runtime_error("CUDA Cell List not implemented yet");
+        break;
+    }
+
+    if (neighbors.empty()) 
+        throw std::runtime_error("The neighbors vector must be filled");
+
+    return neighbors;
 }
 
 void Evaluation::buildCellList() {
@@ -51,7 +148,7 @@ void Evaluation::buildTree() {
 
 std::vector<uint16_t> Evaluation::getBruteForceNeighbors() {
     
-    std::vector<uint16_t>brute_force_neighbors(atoms.x.size());
+    std::vector<uint16_t> brute_force_neighbors(atoms.x.size());
 
     auto start = std::chrono::steady_clock::now();
 
@@ -130,6 +227,26 @@ std::vector<uint16_t> Evaluation::getCellNeighbors() {
     return reorderedNeighbors;
 }
 
+std::vector<uint16_t> Evaluation::getOMPCellNeighbors() {
+    if (!cellList) {
+        throw std::runtime_error("Cell list not initialized");
+    }
+
+    auto start = std::chrono::steady_clock::now();
+
+    std::vector<uint16_t> neighbors = cellList->parallelNumNeighbors();
+
+    auto end = std::chrono::steady_clock::now();
+
+    auto ms = std::chrono::duration<double, std::milli>(end-start).count();
+
+    OMP_list_search_time = ms;
+
+    //purely to make pairwise comparison possible; not part of native cell list usage
+    std::vector<uint16_t>reorderedNeighbors = cellList->degreesInOriginalOrder(neighbors);
+    return reorderedNeighbors;
+}
+
 bool Evaluation::validate(const std::vector<uint16_t>& base_neighbor,
     const std::vector<uint16_t>& compare_neighbor) {
 
@@ -147,17 +264,24 @@ bool Evaluation::validate(const std::vector<uint16_t>& base_neighbor,
 }
 
 void Evaluation::printCellTime() {
+    std::cout << "Cell list:      ";
+    std::cout << "Build: " << cell_list_build_time << " milliseconds    ";
+    std::cout << "Search: " << cell_list_search_time << " milliseconds\n";
+}
 
-    std::cout << "Cell list build: " << cell_list_build_time << " milliseconds\n";
-    std::cout << "Cell list search: " << cell_list_search_time << " milliseconds\n";
+void Evaluation::printOMPCellTime() {
+    std::cout << "OMP Cell list  ";
+    std::cout << "Build: " << cell_list_build_time << " milliseconds    ";
+    std::cout << "Search: " << OMP_list_search_time << " milliseconds\n";
 }
 
 void Evaluation::printTreeTime() {
-    std::cout << "KD-tree build: " << tree_build_time << " milliseconds\n";
-    std::cout << "KD-tree search: " << tree_search_time << " milliseconds\n";
+    std::cout << "KD-tree:       ";
+    std::cout << "Build: " << tree_build_time << " milliseconds    ";
+    std::cout << "Search: " << tree_search_time << " milliseconds\n";
 }
 
 void Evaluation::printBruteForceTime() {
-    std::cout << "Brute force search: " << brute_force_time << " milliseconds\n";
+    std::cout << "Brute force     ";
+    std::cout << brute_force_time << " milliseconds\n";
 }
-

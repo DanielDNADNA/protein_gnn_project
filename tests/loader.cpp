@@ -13,6 +13,10 @@
 namespace fs = std::filesystem;
 
 int main() {
+    
+    auto algorithms = {
+                Algorithm::CellList, 
+                Algorithm::CellListOMP};
 
     std::vector<fs::path> buckets;
 
@@ -49,52 +53,8 @@ int main() {
 
             Evaluation evaluate(atoms, file.path().stem().string());
             
-            evaluate.buildCellList();
-            std::vector<uint16_t> cell_neighbors = evaluate.getCellNeighbors();
-            
-            evaluate.buildTree();
-            std::vector<uint16_t> tree_neighbors = evaluate.getTreeNeighbors();
-            
-            if (atoms.x.size() <= 5000) {
-                std::vector<uint16_t> brute_force_neighbors = evaluate.getBruteForceNeighbors();
-
-                std::cout << "Evaluating tree_neighbors using brute force: \n";
-
-                if (!evaluate.validate(tree_neighbors, brute_force_neighbors)) {
-                    throw std::runtime_error("KD tree and brute force mismatch");
-                }
-        
-                std::cout << "KD tree validated \n";
-
-                std::cout << "Evaluating cell_neighbors using brute force: \n";
-            
-                if (!evaluate.validate(brute_force_neighbors, cell_neighbors)) {
-                    throw std::runtime_error("Brute force and cell list mismatch");
-                }
-                
-                std::cout << "Cell list validated \n";
-
-                std::cout << "Evaluating cell_neighbors with kd tree: \n";
-                if (!evaluate.validate(tree_neighbors, cell_neighbors)) {
-                    throw std::runtime_error("KD tree and cell list mismatch");
-                }
-
-                evaluate.printBruteForceTime();
-            }
-
-            else {
-                std::cout << "Comparing cell list to kd tree \n";
-
-                if (!evaluate.validate(tree_neighbors, cell_neighbors)) {
-                    throw std::runtime_error("KD tree and cell list mismatch");
-                }
-
-                std::cout << "Cell list matches kd tree \n";
-            }
-
-            evaluate.printCellTime();
-            evaluate.printTreeTime();
-            std::cout << "\n";
+            evaluate.evaluateAlgorithms(algorithms);
+            evaluate.validateAlgorithms(algorithms);
         }
     }
 
