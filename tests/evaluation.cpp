@@ -16,9 +16,8 @@
 #include "evaluation.h"
 #include "algorithm.h"
 
-using json = nlohmann::json;
-
-Evaluation::Evaluation(AtomRecord& atoms, const std::string& fileName) : atoms(atoms) {
+Evaluation::Evaluation(AtomRecord& atoms, const std::string& fileName, 
+    std::vector<Algorithm> algorithms) : atoms(atoms), algorithms(algorithms) {
 
     std::cout << "For protein " << fileName << " with " << atoms.x.size() << " atoms: \n";
 
@@ -26,37 +25,68 @@ Evaluation::Evaluation(AtomRecord& atoms, const std::string& fileName) : atoms(a
 
     cutoff = 5.0f;
     cutoff_sq = cutoff*cutoff;
-}
 
-void Evaluation::benchmarkAlgorithms(std::initializer_list<Algorithm> algorithms) {
-    
     for (auto it = algorithms.begin(); it != algorithms.end(); it++) {
         auto algorithm = *it;
 
         switch(algorithm) {
             case Algorithm::BruteForce: {
                 getBruteForceNeighbors();
-                printBruteForceTime();
                 break;
             }
 
             case Algorithm::KDTree: {
                 buildTree();
                 getTreeNeighbors();
-                printTreeTime();
                 break;
             }
 
             case Algorithm::CellList: {
                 buildCellList();
                 getCellNeighbors();
-                printCellTime();
                 break;
             }
 
             case Algorithm::OMPCellList: {
                 buildOMPCellList();
                 getOMPCellNeighbors();
+                break;
+            }
+
+            case Algorithm::CudaCellList: {
+                throw std::runtime_error("Cuda in WIP; not available");
+                break;
+            }
+
+            default: throw std::runtime_error("Invalid algorithm");
+                break;
+        }
+    }
+    setAlgorithmSearch();
+}
+
+void Evaluation::reportBenchmarks() {
+    
+    for (auto it = algorithms.begin(); it != algorithms.end(); it++) {
+        auto algorithm = *it;
+
+        switch(algorithm) {
+            case Algorithm::BruteForce: {
+                printBruteForceTime();
+                break;
+            }
+
+            case Algorithm::KDTree: {
+                printTreeTime();
+                break;
+            }
+
+            case Algorithm::CellList: {
+                printCellTime();
+                break;
+            }
+
+            case Algorithm::OMPCellList: {
                 printOMPCellTime();
                 break;
             }
@@ -70,11 +100,9 @@ void Evaluation::benchmarkAlgorithms(std::initializer_list<Algorithm> algorithms
                 break;
         }
     }
-    setAlgorithmSearch(algorithms);
 }
 
-//dependent on benchmarkAlgorithms
-void Evaluation::validateAlgorithms(std::initializer_list<Algorithm> algorithms) {
+void Evaluation::validateAlgorithms() {
 
     if (algorithms.size() < 2) 
         throw std::runtime_error("Must have 2 or more algorithms to validate");
@@ -99,7 +127,7 @@ void Evaluation::validateAlgorithms(std::initializer_list<Algorithm> algorithms)
 }
 
 //Map between algorithms enum class and the relevant data
-void Evaluation::setAlgorithmSearch(std::initializer_list<Algorithm> algorithms) {
+void Evaluation::setAlgorithmSearch() {
 
     //ensure that only valid algorithms become keys in algorithm_search
     for (auto it = algorithms.begin(); it != algorithms.end(); it++) {
@@ -154,10 +182,10 @@ void Evaluation::setAlgorithmSearch(std::initializer_list<Algorithm> algorithms)
     }
 }
 
-//dependent on benchmarkAlgorithms
-void Evaluation::exportJson(std::initializer_list<Algorithm> algorithms) {
+void Evaluation::exportJson() {
 
     namespace fs = std::filesystem;
+    using json = nlohmann::ordered_json;
 
     //format json file
     if (algorithms.size() == 0)
@@ -167,15 +195,13 @@ void Evaluation::exportJson(std::initializer_list<Algorithm> algorithms) {
 
     const auto& first = *(algorithms.begin());
 
-    std::string protein_name = algorithm_search.at(first).protein_name;
-
     j["protein"] = protein_name;
-    j["atoms"] = algorithm_search[first].num_atoms;
+    j["atoms"] = algorithm_search.at(first).num_atoms;
 
     for (auto it = algorithms.begin(); it != algorithms.end(); it++) {
         auto algorithm = *it;
         //checks for a valid algorithm_search entry
-        const auto& entry = algorithm_search[algorithm];
+        const auto& entry = algorithm_search.at(algorithm);
 
         if (entry.num_atoms == 0)
             throw std::runtime_error("Algorithm was not benchmarked");
@@ -184,7 +210,6 @@ void Evaluation::exportJson(std::initializer_list<Algorithm> algorithms) {
         if (entry.build_ms != 0)
             j["algorithms"][entry.algorithm_name]["build"] = entry.build_ms;
         }
-    }
 
     //Now export
     fs::path directory{BENCHMARK_STATISTICS_DIR};
@@ -198,7 +223,7 @@ void Evaluation::exportJson(std::initializer_list<Algorithm> algorithms) {
     if (!file)
     throw std::runtime_error("Could not open JSON output file");
 
-    file << j.dump(4);
+    file << j.dump(4) << '\n';
 }
 
 void Evaluation::buildCellList() {
@@ -215,10 +240,11 @@ void Evaluation::buildCellList() {
     cell_list.build_ms = static_cast<double>(ms);
 }
 
-//exactly the same as buildCellList; but needed to OMP_cell_list build_ms
+//exactly the same as buildCellList; but needed for OMP_cell_list build_ms
 void Evaluation::buildOMPCellList() {
 
     atoms2 = atoms;
+    cellList.reset();
 
     auto start = std::chrono::steady_clock::now();
 

@@ -23,3 +23,4 @@ __pycache__/
 # Processed files
 *.pt
 *.bin
+*.json

@@ -18,17 +18,14 @@ class Evaluation {
 
     public:
 
-    Evaluation(AtomRecord& atoms, const std::string& fileName);
+    Evaluation(AtomRecord& atoms, const std::string& fileName, 
+        std::vector<Algorithm> algorithms);
 
-    void validateAlgorithms(std::initializer_list<Algorithm> algorithms);
+    void validateAlgorithms();
 
-    void benchmarkAlgorithms(std::initializer_list<Algorithm> algorithms);
+    void reportBenchmarks();
 
-    void exportJson(std::initializer_list<Algorithm> algorithms);
-    
-    void setAlgorithmSearch(std::initializer_list<Algorithm> algorithms);
-
-    std::map<Algorithm, AlgorithmDetails> algorithm_search;
+    void exportJson();
 
     private: 
 
@@ -52,7 +49,11 @@ class Evaluation {
     void printOMPCellTime();
 
     bool validate(const std::vector<uint16_t>& base_neighbor, 
-        const std::vector<uint16_t>& compare_neighbor);  
+        const std::vector<uint16_t>& compare_neighbor); 
+        
+    void setAlgorithmSearch();
+
+    std::map<Algorithm, AlgorithmDetails> algorithm_search;
 
     AtomRecord& atoms; 
     AtomRecord atoms2;
@@ -62,6 +63,8 @@ class Evaluation {
     std::optional<CellList> cellList;
 
     std::string protein_name;
+
+    std::vector<Algorithm> algorithms;
 
     float cutoff;
     float cutoff_sq;

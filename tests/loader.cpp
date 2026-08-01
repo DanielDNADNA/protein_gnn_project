@@ -9,6 +9,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cassert>
+#include <random>
 
 namespace fs = std::filesystem;
 
@@ -16,13 +17,18 @@ int main() {
 
     //Add algorithms here to validate/evaluate them: 
     //BruteForce, KDTree, CellList, CellListOMP, CudaCellList
-    auto algorithms = {
+    std::vector<Algorithm> algorithms = {
             Algorithm::CellList, 
-            Algorithm::OMPCellList
+            Algorithm::OMPCellList,
+            Algorithm::KDTree
         };
+    
+    //to randomly shuffle algorithms
+    std::mt19937 rng(42);
 
-    //stops validating/evaluating if max_num_atoms passes this mark
-    size_t max_num_atoms = 10000000;
+    //stops validating/evaluating if max_atoms passes this mark
+    size_t max_atoms = 100000000;
+    size_t min_atoms = 25001;
 
     std::vector<fs::path> buckets;
 
@@ -53,23 +59,29 @@ int main() {
         for (const auto& file : fs::directory_iterator(bucket)) {
             if (file.path().extension() != ".bin")
                 continue;
+            
+            std::shuffle(algorithms.begin(), algorithms.end(), rng);
 
             AtomRecord atoms;
             atoms = atoms.load(file.path().string());
 
             size_t num_atoms = atoms.x.size();
             
-            if (num_atoms <= max_num_atoms) {
+            if (num_atoms <= max_atoms && num_atoms >= min_atoms) {
 
-                Evaluation evaluate(atoms, file.path().stem().string());
-                evaluate.benchmarkAlgorithms(algorithms);
+                Evaluation evaluate(atoms, file.path().stem().string(), algorithms);
+                evaluate.reportBenchmarks();
 
                 //validation uses the first algorithm as the base case
                 if (algorithms.size() >= 2) {
-                    evaluate.validateAlgorithms(algorithms);
+                    evaluate.validateAlgorithms();
                 }
+
+                evaluate.exportJson();
             }
-            else break;
+            
+            if (num_atoms > max_atoms) break;
+            if (num_atoms < min_atoms) continue;
         }
     }
 
