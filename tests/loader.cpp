@@ -13,10 +13,16 @@
 namespace fs = std::filesystem;
 
 int main() {
-    
+
+    //Add algorithms here to validate/evaluate them: 
+    //BruteForce, KDTree, CellList, CellListOMP, CudaCellList
     auto algorithms = {
-                Algorithm::CellList, 
-                Algorithm::CellListOMP};
+            Algorithm::CellList, 
+            Algorithm::OMPCellList
+        };
+
+    //stops validating/evaluating if max_num_atoms passes this mark
+    size_t max_num_atoms = 10000000;
 
     std::vector<fs::path> buckets;
 
@@ -51,10 +57,19 @@ int main() {
             AtomRecord atoms;
             atoms = atoms.load(file.path().string());
 
-            Evaluation evaluate(atoms, file.path().stem().string());
+            size_t num_atoms = atoms.x.size();
             
-            evaluate.evaluateAlgorithms(algorithms);
-            evaluate.validateAlgorithms(algorithms);
+            if (num_atoms <= max_num_atoms) {
+
+                Evaluation evaluate(atoms, file.path().stem().string());
+                evaluate.benchmarkAlgorithms(algorithms);
+
+                //validation uses the first algorithm as the base case
+                if (algorithms.size() >= 2) {
+                    evaluate.validateAlgorithms(algorithms);
+                }
+            }
+            else break;
         }
     }
 

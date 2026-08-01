@@ -1,16 +1,16 @@
-﻿cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20)
 
 project(protein_spatial_gnn CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_compile_options(
     $<$<CONFIG:Release>:-O3>
     -march=native
 )
-
-find_package(OpenMP REQUIRED)
 
 # -----------------------------
 # Dependencies
@@ -41,6 +41,16 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(pybind11)
+
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+
+FetchContent_MakeAvailable(json)
+
+find_package(OpenMP REQUIRED)
 
 # -----------------------------
 # Core library
@@ -119,6 +129,13 @@ add_custom_command(TARGET evaluate POST_BUILD
         $<TARGET_FILE_DIR:evaluate>/benchmark_bin
 )
 
+target_link_libraries(evaluate PRIVATE nlohmann_json::nlohmann_json)
+
+target_compile_definitions(evaluate PRIVATE
+    PROJECT_DATA_DIR="${CMAKE_SOURCE_DIR}/data"
+    BENCHMARK_STATISTICS_DIR="${CMAKE_SOURCE_DIR}/data/benchmark_statistics"
+)
+
 # -----------------------------
 # Save benchmark parser
 # -----------------------------
@@ -126,7 +143,10 @@ add_custom_command(TARGET evaluate POST_BUILD
 add_spatial_executable(
     save_pdb_files
     tests/save_pdb_files.cpp
-    tests/evaluation.cpp
+)
+
+target_link_libraries(save_pdb_files PRIVATE
+    nlohmann_json::nlohmann_json
 )
 
 add_custom_command(TARGET save_pdb_files POST_BUILD
