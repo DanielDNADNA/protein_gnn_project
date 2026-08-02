@@ -20,15 +20,15 @@ int main() {
     std::vector<Algorithm> algorithms = {
             Algorithm::CellList, 
             Algorithm::OMPCellList,
-            Algorithm::KDTree
+            Algorithm::KDTree    
         };
     
     //to randomly shuffle algorithms
     std::mt19937 rng(42);
 
     //stops validating/evaluating if max_atoms passes this mark
-    size_t max_atoms = 100000000;
-    size_t min_atoms = 25001;
+    size_t max_atoms = 10000000;
+    size_t min_atoms = 25000;
 
     std::vector<fs::path> buckets;
 
@@ -38,7 +38,7 @@ int main() {
         }
     }
 
-    //sorts the files least to greatest
+    //sorts the files least atoms to most
     std::sort(buckets.begin(), buckets.end(), 
         [](const fs::path& a, const fs::path& b) {
             auto parse_size = [](const fs::path& p) {

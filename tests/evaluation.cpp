@@ -229,7 +229,8 @@ void Evaluation::exportJson() {
 void Evaluation::buildCellList() {
 
     atoms2 = atoms;
-
+    cellList.reset();
+    
     auto start = std::chrono::steady_clock::now();
 
     cellList.emplace(atoms2, cutoff);

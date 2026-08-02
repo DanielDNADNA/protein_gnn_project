@@ -8,4 +8,5 @@ rcsb-api==1.7.3
 
 gemmi==0.7.5
 numpy==2.4.4
-scipy==1.18.0
+matplotlib==3.11.1
+pandas==3.0.3

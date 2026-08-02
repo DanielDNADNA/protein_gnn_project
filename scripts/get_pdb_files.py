@@ -2,7 +2,6 @@ from rcsbapi.search import search_attributes as attrs
 from pathlib import Path
 import csv
 
-
 output_file = Path(__file__).resolve().parent.parent / "data" / "benchmark_raw" / "benchmark_manifest.csv"
 output_file.parent.mkdir(parents=True, exist_ok=True)
 
