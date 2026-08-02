@@ -128,10 +128,14 @@ def main():
                 r2 = compute_r2_score(pred, time)
                 rmse = compute_rmse(pred, time)
 
-                penalty = 0
+                penalties = {
+                    "Linear": 0.0,
+                    "Quadratic": 0.002,
+                    "N log N": 0.001
+                }
 
                 if name == "Linear":
-                
+
                     a, b = coeffs
 
                     print(f"Linear: f(x) = {a}x, + {b}")
@@ -141,7 +145,6 @@ def main():
 
                 # to penalize extraneous complexity
                 if name == "Quadratic":
-                    penalty = 0.001
 
                     a, b, c = coeffs
 
@@ -150,10 +153,7 @@ def main():
                     print(f"rmse: {rmse}")
                     print()
 
-                # logarithmic is slightly less likely to be extraneous than the quadratic
-                # logarithmic coefficients may naturally be small
                 if name == "N log N":
-                    penalty = 0.0005
 
                     a, b = coeffs
             
@@ -161,6 +161,8 @@ def main():
                     print(f"r2_score: {r2}")
                     print(f"rmse: {rmse}")
                     print()
+
+                penalty = penalties[name]
 
                 if r2 - penalty > best_r2:
                     best_prediction = pred
@@ -182,7 +184,6 @@ def main():
                         }
             
             best_models.append(best_model)
-            print(f"{best_model["algorithm"], best_model["metric"], best_model["name"]}")
 
         for best_model in best_models:
             order = np.argsort(best_model["atoms"])
@@ -201,6 +202,8 @@ def main():
             filename = f"{best_model["algorithm"]}_{best_model["metric"]}.png"
             plt.savefig(filename, dpi = 300, bbox_inches="tight")
             plt.close()
+
+            print(f"{best_model["algorithm"], best_model["metric"], best_model["name"]}")
 
 if __name__ == "__main__":
     main()
