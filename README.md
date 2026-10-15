@@ -53,4 +53,20 @@ A [num edges, 4] tensor with the following features:
 - **Bond type:** Indices 0-3: Single, double, triple, and delocalized respectively; default of single.
 - **Bond distance:** Index 4: The distance between two bonded atoms, normalized.
 
+### KD-tree and Cell List 
+
+The number of neighbors of each atom can be found efficiently by the kd tree and the cell lists, which 
+algorithmically prune areas that are outside of the radius. 
+
+#### KD-tree
+
+The kd-tree is a special case of binary tree, which instead divides space based on the axes. For example, if the axis is 1, 
+which corresponds to the x-axis, all of the right children will have a greater or equal x coordinate than all of the left children. The next recursion does the same for the y-axis, and the next for the z-axis, before looping back to x. 
+
+This implementation uses an implicit kd-tree; where the indices of the atoms are stored in a separate vector, and the right and left vectors store the positions of the next right and left child respectively. 
+
+The search method uses the size guarantees to prune, on average, half of all atoms each recursion. For example, if a point is (1,0,0), the radius is 5.0 Angstroms, and the current point is (7,0,0), the distance would be calculated 1-7 = -6. The x value would be too large, so the algorithm would check only the left children. Since on average the tree is roughly balanced, that eliminates about half of all atoms. 
+
+Because of this, the search algorithm has a O(\log n)$ time complexity per neighbor. 
+
 
