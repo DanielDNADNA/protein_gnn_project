@@ -67,6 +67,14 @@ This implementation uses an implicit kd-tree; where the indices of the atoms are
 
 The search method uses the size guarantees to prune, on average, half of all atoms each recursion. For example, if a point is (1,0,0), the radius is 5.0 Angstroms, and the current point is (7,0,0), the distance would be calculated 1-7 = -6. The x value would be too large, so the algorithm would check only the left children. Since on average the tree is roughly balanced, that eliminates about half of all atoms. 
 
-Because of this, the search algorithm has a O(\log n)$ time complexity per neighbor. 
+Because of this, the search algorithm has a $O(\log n)$ time complexity per neighbor. 
+
+#### Cell list
+
+The cell list uses spatial hashing to narrow down the atoms to a smaller box, and then uses the brute-force method to search for neighbors within that bounded range. Each atom is assigned to a box of size 5.0f via an ID. 
+
+The search algorithm converts the atom's coordinates into its ID, and then checks its box and the 9 surrounding ones for points within the radius of the atom. 
+
+While the theoretical time complexity for a brute force approach is $O(N^2)$, the number of elements within a box is relatively fixed for an object of constant density, which proteins roughly are, yielding an average search time of $O(1)$ per atom. 
 
 
