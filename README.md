@@ -79,10 +79,37 @@ While the theoretical time complexity for a brute force approach is $O(N^2)$, th
 
 This cell list was implemented using a CSR format, as well as an implicit cell list structure, by ordering the AtomRecord struct such that atoms in the same box are adjacent to each other. 
 
-### Benchmarking
+In addition, a basic OMP cell list was implemented, by making the search within the 9 boxes parallel. 
+
+## Benchmarking
 
 While the cell list has a superior theoretical time complexity than the kd-tree, $\log n$ is often nearly constant over 
 a few orders of magnitude, thus constant factors may enable it to be a faster algorithm. In general, the cell list does better in structures of roughly regular density, while doing worse in ones without (as some areas may have an extremely 
 large amount of atoms to check). By contrast, the kd-tree does best in structures with roughly the same number of atoms on each 'split' of the axes, as otherwise less than half of the points would be pruned each recursion, so is not dependent on density. 
 
-The build and search steps for the kd-tree and cell list were timed using the chrono library from STL. 
+The build and search steps for the kd-tree and cell list were timed using the chrono library from STL.
+For each trial, a choice was made between using the cell list, an OMP cell list, and a kd-tree first. This prevented any one data structure from having the advantage of going first, although this did introduce some variability. 
+
+The data was then fit to a quadratic, linear, or n log n model for that algorithm, and the $r^2$ and rmse of each were reported. 
+
+### Specs
+-**Hardware:** Intel(R) Core(TM) Ultra 7 265 
+-**Compiler:** gcc 15.2.0, no flags
+
+### Results (in miliseconds)
+#### Brute force:
+$f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+e^{-5} + 0.256$, $r^2$ = 0.9997, rmse = 0.92
+
+The KD-tree and the cell list's times were divided between search and build. 
+
+#### KD-tree: 
+
+Search:
+Unexpectedly, the linear case performed best, with an $r^2$ score of 0.996 and an rmse of 29.00, 
+$f(n) = 9.56 \cdot 10^{-4} -0.77$
+
+While the n log n form, the theoretical time complexity, had an $r^2$ score of 0.995 and an rmse of 37, along with a very large constant term and a small n ln n term, which would normally suggest that it was not very relevant. 
+$f(n) = 6.64*10^{-5}n log n + 11.054$
+
+
+
