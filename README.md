@@ -93,8 +93,8 @@ For each trial, a choice was made between using the cell list, an OMP cell list,
 The data was then fit to a quadratic, linear, or n log n model for that algorithm, and the $r^2$ and rmse of each were reported. 
 
 ### Specs
--**Hardware:** Intel(R) Core(TM) Ultra 7 265 
--**Compiler:** gcc 15.2.0, no flags
+- **Hardware:** Intel(R) Core(TM) Ultra 7 265 
+- **Compiler:** gcc 15.2.0, no flags
 
 ### Results (in miliseconds)
 #### Brute force:
@@ -109,7 +109,7 @@ Unexpectedly, the linear case performed best, with an $r^2$ score of 0.996 and a
 $f(n) = 9.56 \cdot 10^{-4} -0.77$
 
 While the n log n form, the theoretical time complexity, had an $r^2$ score of 0.995 and an rmse of 37, along with a very large constant term and a small n ln n term, which would normally suggest that it was not very relevant. 
-$f(n) = 6.64*10^{-5}n log n + 11.054$
+$f(n) = 6.64*10^{-5}n \log n + 11.054$
 
 
 
