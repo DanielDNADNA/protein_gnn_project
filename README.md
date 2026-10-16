@@ -103,21 +103,29 @@ $f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$, $r^2$ = 0.9997, rmse = 0
 The KD-tree and the cell list's times were divided between search and build. 
 
 Functions of Best Fit for Brute Force, K-d Tree, and Cell List; time in milliseconds, n in number of atoms, excluding water
-| Brute Force | Linear | Quadratic | n Log n |
+| Brute Force | Linear | Quadratic | n Ln n |
 | :---:       | :---:  | :---:     | :---:            |
-| Search      | $f(n) = 9.36 \cdot 10^{-3}n - 27.98$ | $f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$ | $f(n) = 9.42 \cdot 10^{-4} n \log n - 22.95$ |
+| Search      | $f(n) = 9.36 \cdot 10^{-3}n - 27.98$ | $f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18 \cdot 10^{-5}n + 0.256$ | $f(n) = 9.42 \cdot 10^{-4} n \ln n - 22.95$ |
 | rmse       | 18.81    | 0.921     | 16.62   | 
 | r^2        |  0.892   | 0.9997    | 0.916   |
 
-| KD-tree | Linear | Quadratic | n Log n |
+| KD-tree | Linear | Quadratic | n Ln n |
 | :---:       | :---:  | :---:     | :---:            |
-| Search      | $f(n) = 9.5 \cdot 10^{-4}n - 0.768$ | $f(n) = -4.11 \cdot 10^{-11}n^2 + 1.03+10^{-3}n - 6.320$ | $f(n) = 6.64 \cdot 10^{-5} n \log n + 11.05$ |
+| Search      | $f(n) = 9.5 \cdot 10^{-4}n - 0.768$ | $f(n) = -4.11 \cdot 10^{-11}n^2 + 1.03 \cdot 10^{-3}n - 6.320$ | $f(n) = 6.64 \cdot 10^{-5} n \ln n + 11.05$ |
 | rmse       | 28.96    | 25.30     | 37.10   | 
 | r^2        |  0.997   | 0.998    | 0.995   |
-| Build      | $f(n) = 1.81 \cdot 10^{-4}n - 1.54$ | $f(n) = 4.19 \cdot 10^{-12}n^2 + 1.73+10^{-4}n - 0.97$      | $f(n) = 1.26 \cdot 10^{-5} n \log n + 0.64$ |
+| Build      | $f(n) = 1.81 \cdot 10^{-4}n - 1.54$ | $f(n) = 4.19 \cdot 10^{-12}n^2 + 1.73 \cdot 10^{-4}n - 0.97$ | $f(n) = 1.26 \cdot 10^{-5} n \ln n + 0.64$ |
 | rmse       | 3.67    | 3.37     | 3.40   | 
 | r^2        |  0.999   | 0.999    | 0.999  |
 
+| Cell List | Linear | Quadratic | n Ln n |
+| :---:       | :---:  | :---:     | :---:            |
+| Search      | $f(n) = 3.70 \cdot 10^{-4}n + 0.385$ | $f(n) = -5.39 \cdot 10^{-12}n^2 + 3.79 \cdot 10^{-4}n - 0.344$ | $f(n) = 2.57 \cdot 10^{-5} n \ln n + 4.92$ |
+| rmse       | 8.63    | 8.42 | 11.38   | 
+| r^2        |  0.998   | 0.998 | 0.997   |
+| Build      | $f(n) = 2.72 \cdot 10^{-5}n - 0.32$ | $f(n) = 3.38 \cdot 10^{-12}n^2 + 2.13+10^{-5}n - 0.13$ | $f(n) = 1.90 \cdot 10^{-6} n \ln n - 0.007$ |
+| rmse       | 4.78    | 4.65     | 4.72   | 
+| r^2        |  0.904   | 0.910    | 0.907  |
 
 
 #### KD-tree: 
