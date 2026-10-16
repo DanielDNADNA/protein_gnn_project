@@ -132,14 +132,23 @@ The only algorithm with a clear fit is brute force, with a nearly perfect fit to
 With this in mind, the cell list does match its linear theoretical time complexity. In both the build and search models, the rmse and $r^2$ values are quite similar. Moreover, the quadratic terms in the quadratic models are miniscule, thus likely overfitting. The main deviation from expected is the kd-tree; which has linear behavior over its build and search functions. 
 This is perhaps not surprising, as from 5000 atoms to 2.5 million atoms, the ln term only increases by 1.7 times; perhaps not large enough to be distinguished from noise. The addage that the ln term is essentially constant is not contradicted here. 
 
-As for the speed comparison, the speed may be estimated by summing the polynomials for the building and search algorithms. 
-Cell list: $f(n) = 3.70 \cdot 10^{-4}n + 0.385 + f(n) = 2.72 \cdot 10^{-5}n - 0.32$.
-KD-tree: $f(n) = 6.64 \cdot 10^{-5} n \ln n + 11.05 + 1.26 \cdot 10^{-5} n \ln n + 0.64$
-Comparing values from 5000-1,000,000, the cell list outperforms the kd-tree by 3-7 times.
+As for the speed comparison, the speed may be estimated by summing the polynomials for the building and search algorithms. \newline
+Cell list: $f(n) = 3.70 \cdot 10^{-4}n + 0.385 + f(n) = 2.72 \cdot 10^{-5}n - 0.32$.\newline
+KD-tree: $f(n) = 6.64 \cdot 10^{-5} n \ln n + 11.05 + 1.26 \cdot 10^{-5} n \ln n + 0.64$ \newline
+Comparing values from 5000-1,000,000, the cell list outperforms the kd-tree by roughly 3-7 times.
 
 ## Usage
 A few steps: clone the repository, then download all the required libraries. The desired order to run the files is: get_pdb_files.py (choosing the ranges as desired), download_pdb_files.py, save_pdb_files.cpp, loader.cpp, then last download_pdb_files.py.
 
 For loader.cpp, if brute force is used, add that to the enum (Algorithm::BruteForce) and then restrict the max_atoms to 25,000. Once complete, remove bruteforce from the enum, then have (min_atoms, max_atoms) be (25,000, 10^7). 
 
-##
+## Limitations and Future Work
+The results from the benchmark should neither be considered typical for proteins or for the data structures in general; there are other cases where kd-tree does outperform cell list. Moreover, a more realistic usage of these data structures would involve moving, not static proteins, although this adds technical complexity and a scenario out of scope of this project. 
+
+The validation is not fully complete either; as it only scales to 25,000 atoms. There is a slim possibility that there exists a coding error that produces the exact same error in the KD-tree and the cell list beyond 25,000 atoms. A more rigorous validation process would involve using an external library for those two data structures, as they would be fast enough across the whole atom range. 
+In addition, a more analysis of time and space complexity of the time and space usage of the kd-tree and cell list would be preferable to the rough estimation made using the polynomials. 
+
+The GNN is technically complete, with the graph object and data pipeline mostly complete as well; however, there is no script for downloading the necessary pdb files, and the model has not be evaluated or tested for bugs. Thus, this side of the project remains incomplete. 
+
+## Acknowledgements
+Special thanks to 
