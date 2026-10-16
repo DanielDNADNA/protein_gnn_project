@@ -98,7 +98,7 @@ The data was then fit to a quadratic, linear, or n log n model for that algorith
 
 ### Results (in miliseconds)
 #### Brute force:
-$f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+e^{-5} + 0.256$, $r^2$ = 0.9997, rmse = 0.92
+$f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$, $r^2$ = 0.9997, rmse = 0.92
 
 The KD-tree and the cell list's times were divided between search and build. 
 
@@ -106,10 +106,10 @@ The KD-tree and the cell list's times were divided between search and build.
 
 Search:
 Unexpectedly, the linear case performed best, with an $r^2$ score of 0.996 and an rmse of 29.00, 
-$f(n) = 9.56*10^{-4} -0.77$
+$f(n) = 9.56 \cdot 10^{-4}n -0.77$
 
 While the n log n form, the theoretical time complexity, had an $r^2$ score of 0.995 and an rmse of 37, along with a very large constant term and a small n ln n term, which would normally suggest that it was not very relevant. 
-$f(n) = 6.64*10^{-5}n \log n + 11.054$
+$f(n) = 6.64 \cdot 10^{-5}n \log n + 11.054$
 
 
 
