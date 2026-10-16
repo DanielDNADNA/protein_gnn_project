@@ -102,9 +102,12 @@ $f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$, $r^2$ = 0.9997, rmse = 0
 
 The KD-tree and the cell list's times were divided between search and build. 
 
-| Left Aligned | Centered | Right Aligned |
-| :---         | :---:    | ---:          |
-|          | Text     | Text          |
+Functions of 
+| Left Aligned | Centered | Right Aligned | Brute Force |
+| :---         | :---:    | ---:          |             |
+|  | Brute Force | Linear | Quadratic    |
+| Search | | |
+|Build | | | 
 #### KD-tree: 
 
 Search:
