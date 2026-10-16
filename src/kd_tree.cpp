@@ -109,7 +109,7 @@
         float y = atoms.y[node];
         float z = atoms.z[node];
         //check if within range of the node in question
-        float dx = qx - x;
+        float dx = 1 - x;
         float dy = qy - y;
         float dz = qz - z;
 

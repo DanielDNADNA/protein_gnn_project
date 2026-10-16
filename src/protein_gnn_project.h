@@ -20,9 +20,12 @@ public:
 	gemmi::Structure st;
 	int count = 0;
 
-	std::unordered_map<std::string, int> atom_map;
+	std::unordered_map<std::string, int> atom_map = 
+	{{"C", 0}, {"N", 1}, {"O", 2}, {"S", 3}, {"P", 4}};
 	
-	std::unordered_map<std::string, int> residue_map;
+	std::unordered_map<std::string, int> residue_map = {{"ALA", 0}, {"ARG", 1}, {"ASN", 2}, {"ASP", 3},
+        {"CYS", 4}, {"GLN", 5}, {"GLU", 6}, {"GLY", 7}, {"HIS", 8}, {"ILE", 9}, {"LEU", 10}, {"LYS", 11},
+        {"MET", 12}, {"PHE", 13}, {"PRO", 14}, {"SER", 15}, {"THR", 16}, {"TRP", 17}, {"TYR", 18}, {"VAL", 19}};
 
 	AtomRecord atoms;
 	Edges edges;
