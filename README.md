@@ -130,4 +130,16 @@ Functions of Best Fit for Brute Force, K-d Tree, and Cell List; time in millisec
 The only algorithm with a clear fit is brute force, with a nearly perfect fit to the quadratic form and a much poorer fit to the other ones. This is not too surprising; an extra quadratic term enables the equation fit around any noise that may exist i.e. overfitting. Thus, in general, when a simpler model has nearly identical rmse and $r^2$ values, it is preferable. 
 
 With this in mind, the cell list does match its linear theoretical time complexity. In both the build and search models, the rmse and $r^2$ values are quite similar. Moreover, the quadratic terms in the quadratic models are miniscule, thus likely overfitting. The main deviation from expected is the kd-tree; which has linear behavior over its build and search functions. 
-This is perhaps not surprising, as from 5000 atoms to 2.5 million atoms, the ln term only increases by 1.7 times; perhaps not large enough to be distinguished from noise. The addage that the ln term is nearly constant is not contradicted here. 
+This is perhaps not surprising, as from 5000 atoms to 2.5 million atoms, the ln term only increases by 1.7 times; perhaps not large enough to be distinguished from noise. The addage that the ln term is essentially constant is not contradicted here. 
+
+As for the speed comparison, the speed may be estimated by summing the polynomials for the building and search algorithms. 
+Cell list: $f(n) = 3.70 \cdot 10^{-4}n + 0.385 + f(n) = 2.72 \cdot 10^{-5}n - 0.32$.
+KD-tree: $f(n) = 6.64 \cdot 10^{-5} n \ln n + 11.05 + 1.26 \cdot 10^{-5} n \ln n + 0.64$
+Comparing values from 5000-1,000,000, the cell list outperforms the kd-tree by 3-7 times.
+
+## Usage
+A few steps: clone the repository, then download all the required libraries. The desired order to run the files is: get_pdb_files.py (choosing the ranges as desired), download_pdb_files.py, save_pdb_files.cpp, loader.cpp, then last download_pdb_files.py.
+
+For loader.cpp, if brute force is used, add that to the enum (Algorithm::BruteForce) and then restrict the max_atoms to 25,000. Once complete, remove bruteforce from the enum, then have (min_atoms, max_atoms) be (25,000, 10^7). 
+
+##
