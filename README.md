@@ -77,4 +77,12 @@ The search algorithm converts the atom's coordinates into its ID, and then check
 
 While the theoretical time complexity for a brute force approach is $O(N^2)$, the number of elements within a box is relatively fixed for an object of constant density, which proteins roughly are, yielding an average search time of $O(1)$ per atom. 
 
+This cell list was implemented using a CSR format, as well as an implicit cell list structure, by ordering the AtomRecord struct such that atoms in the same box are adjacent to each other. 
 
+### Benchmarking
+
+While the cell list has a superior theoretical time complexity than the kd-tree, $\log n$ is often nearly constant over 
+a few orders of magnitude, thus constant factors may enable it to be a faster algorithm. In general, the cell list does better in structures of roughly regular density, while doing worse in ones without (as some areas may have an extremely 
+large amount of atoms to check). By contrast, the kd-tree does best in structures with roughly the same number of atoms on each 'split' of the axes, as otherwise less than half of the points would be pruned each recursion, so is not dependent on density. 
+
+The build and search steps for the kd-tree and cell list were timed using the chrono library from STL. 
