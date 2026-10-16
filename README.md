@@ -85,7 +85,7 @@ In addition, a basic OMP cell list was implemented, by making the search within 
 
 While the cell list has a superior theoretical time complexity than the kd-tree, $\log n$ is often nearly constant over 
 a few orders of magnitude, thus constant factors may enable it to be a faster algorithm. In general, the cell list does better in structures of roughly regular density, while doing worse in ones without (as some areas may have an extremely 
-large amount of atoms to check). By contrast, the kd-tree does best in structures with roughly the same number of atoms on each 'split' of the axes, as otherwise less than half of the points would be pruned each recursion, so is not dependent on density. 
+large amount of atoms to check). By contrast, the kd-tree does best in structures with roughly the same number of atoms on each 'split' of the axes, as otherwise less than half of the points would be pruned each recursion, so is not dependent on density. It is also possible that the kd-tree may be faster over some size ranges than the cell list and vice versa. The benchmarking aimed to resolve these questions for specifically proteins. 
 
 The build and search steps for the kd-tree and cell list were timed using the chrono library from STL.
 For each trial, a choice was made between using the cell list, an OMP cell list, and a kd-tree first. This prevented any one data structure from having the advantage of going first, although this did introduce some variability. 
@@ -102,12 +102,24 @@ $f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$, $r^2$ = 0.9997, rmse = 0
 
 The KD-tree and the cell list's times were divided between search and build. 
 
-Functions of 
-| Left Aligned | Centered | Right Aligned | Brute Force |
-| :---         | :---:    | ---:          |             |
-|  | Brute Force | Linear | Quadratic    |
-| Search | | |
-|Build | | | 
+Functions of Best Fit for Brute Force, K-d Tree, and Cell List; time in milliseconds, n in number of atoms, excluding water
+| Brute Force | Linear | Quadratic | n Log n |
+| :---:       | :---:  | :---:     | :---:            |
+| Search      | $f(n) = 9.36 \cdot 10^{-3}n - 27.98$ | $f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$ | $f(n) = 9.42 \cdot 10^{-4} n \log n - 22.95$ |
+| rmse       | 18.81    | 0.921     | 16.62   | 
+| r^2        |  0.892   | 0.9997    | 0.916   |
+
+| KD-tree | Linear | Quadratic | n Log n |
+| :---:       | :---:  | :---:     | :---:            |
+| Search      | $f(n) = 9.5 \cdot 10^{-4}n - 0.768$ | $f(n) = -4.11 \cdot 10^{-11}n^2 + 1.03+10^{-3}n - 6.320$ | $f(n) = 6.64 \cdot 10^{-5} n \log n + 11.05$ |
+| rmse       | 28.96    | 25.30     | 37.10   | 
+| r^2        |  0.997   | 0.998    | 0.995   |
+| Build      | $f(n) = 1.81 \cdot 10^{-4}n - 1.54$ | $f(n) = 4.19 \cdot 10^{-12}n^2 + 1.73+10^{-4}n - 0.97$      | $f(n) = 1.26 \cdot 10^{-5} n \log n + 0.64$ |
+| rmse       | 3.67    | 3.37     | 3.40   | 
+| r^2        |  0.999   | 0.999    | 0.999  |
+
+
+
 #### KD-tree: 
 
 Search:
