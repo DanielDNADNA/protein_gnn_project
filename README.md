@@ -102,6 +102,9 @@ $f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$, $r^2$ = 0.9997, rmse = 0
 
 The KD-tree and the cell list's times were divided between search and build. 
 
+| Left Aligned | Centered | Right Aligned |
+| :---         | :---:    | ---:          |
+|          | Text     | Text          |
 #### KD-tree: 
 
 Search:
@@ -111,5 +114,7 @@ $f(n) = 9.56 \cdot 10^{-4}n -0.77$
 While the n log n form, the theoretical time complexity, had an $r^2$ score of 0.995 and an rmse of 37, along with a very large constant term and a small n ln n term, which would normally suggest that it was not very relevant. 
 $f(n) = 6.64 \cdot 10^{-5}n \log n + 11.054$
 
+#### Cell List:
 
+Search: 
 
