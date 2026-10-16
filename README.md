@@ -32,8 +32,7 @@ The features and the GNN architecture were exactly those used in a 2024 Arxiv pr
 began as a replication of the Meta GNN used within the paper. 
 
 As explained within the paper, there are four matrices representing each matrix (section 5.2): 
-node features, 3D coordinates, edge features, target node feature. The number of node and edge features was not explicitly given
-and were assumed by the author. 
+node features, 3D coordinates, edge features, target node feature. The number of node and edge features was not explicitly given and were assumed by the author. 
 
 #### The matrix of node features. 
 
@@ -49,7 +48,7 @@ A [num atoms, 3] tensor with x, y, z coordinates of that atom respectively, norm
 
 #### The matrix of edge features
 
-A [num edges, 4] tensor with the following features: 
+A [num edges, 5] tensor with the following features: 
 - **Bond type:** Indices 0-3: Single, double, triple, and delocalized respectively; default of single.
 - **Bond distance:** Index 4: The distance between two bonded atoms, normalized.
 
@@ -87,18 +86,18 @@ While the cell list has a superior theoretical time complexity than the kd-tree,
 a few orders of magnitude, thus constant factors may enable it to be a faster algorithm. In general, the cell list does better in structures of roughly regular density, while doing worse in ones without (as some areas may have an extremely 
 large amount of atoms to check). By contrast, the kd-tree does best in structures with roughly the same number of atoms on each 'split' of the axes, as otherwise less than half of the points would be pruned each recursion, so is not dependent on density. It is also possible that the kd-tree may be faster over some size ranges than the cell list and vice versa. The benchmarking aimed to resolve these questions for specifically proteins. 
 
+20 atoms were chosen from the range of (1000, 5000), (5000, 10000, (10000, 50000) ... (1 * 10^6, 3 * 10^6) to measure the performance of the algorithms over a wide range of atom numbers. Because of this, however, the data below should not be considered representative of the algorithms' performance with protein data in general. As stated before, the brute force algorithm was tested only up to 25,000 atoms due to scaling concerns. 
+
 The build and search steps for the kd-tree and cell list were timed using the chrono library from STL.
 For each trial, a choice was made between using the cell list, an OMP cell list, and a kd-tree first. This prevented any one data structure from having the advantage of going first, although this did introduce some variability. 
 
-The data was then fit to a quadratic, linear, or n log n model for that algorithm, and the $r^2$ and rmse of each were reported. 
+The data was then fit to a quadratic, linear, or n log n model for that algorithm, and the $r^2$ and rmse of each were reported. The $r^2$ term measures the amount of time the algorithm takes that is explained by the number of atoms; generally a higher number is best. In general practice, an $r^2$ of positive or negative 0.90 is considered best, although in this case a value closer to 0.99 is desired. The number of atoms is the dominant factor in the runtime, so lower values are much more likely indicative of a poorly fitted model. By contrast, a low rmse is desired, as it measures the mean error the model has with the actual data. There is no universal standard for a good rmse, and it should be used to compare competing models for the same algorithm because it is influenced by the runtime. 
 
 ### Specs
 - **Hardware:** Intel(R) Core(TM) Ultra 7 265 
 - **Compiler:** gcc 15.2.0, no flags
 
 ### Results (in miliseconds)
-#### Brute force:
-$f(n) = 4.49 \cdot 10^{-7}n^2 + 7.18+10^{-5}n + 0.256$, $r^2$ = 0.9997, rmse = 0.92
 
 The KD-tree and the cell list's times were divided between search and build. 
 
@@ -127,17 +126,8 @@ Functions of Best Fit for Brute Force, K-d Tree, and Cell List; time in millisec
 | rmse       | 4.78    | 4.65     | 4.72   | 
 | r^2        |  0.904   | 0.910    | 0.907  |
 
+### Discussion
+The only algorithm with a clear fit is brute force, with a nearly perfect fit to the quadratic form and a much poorer fit to the other ones. This is not too surprising; an extra quadratic term enables the equation fit around any noise that may exist i.e. overfitting. Thus, in general, when a simpler model has nearly identical rmse and $r^2$ values, it is preferable. 
 
-#### KD-tree: 
-
-Search:
-Unexpectedly, the linear case performed best, with an $r^2$ score of 0.996 and an rmse of 29.00, 
-$f(n) = 9.56 \cdot 10^{-4}n -0.77$
-
-While the n log n form, the theoretical time complexity, had an $r^2$ score of 0.995 and an rmse of 37, along with a very large constant term and a small n ln n term, which would normally suggest that it was not very relevant. 
-$f(n) = 6.64 \cdot 10^{-5}n \log n + 11.054$
-
-#### Cell List:
-
-Search: 
-
+With this in mind, the cell list does match its linear theoretical time complexity. In both the build and search models, the rmse and $r^2$ values are quite similar. Moreover, the quadratic terms in the quadratic models are miniscule, thus likely overfitting. The main deviation from expected is the kd-tree; which has linear behavior over its build and search functions. 
+This is perhaps not surprising, as from 5000 atoms to 2.5 million atoms, the ln term only increases by 1.7 times; perhaps not large enough to be distinguished from noise. The addage that the ln term is nearly constant is not contradicted here. 
