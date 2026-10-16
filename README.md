@@ -12,10 +12,10 @@ The RCSB Protein Data Bank API was used to select and download mmCIF files of mo
 Gemmi was then used to extract atomic coordinates, residue IDs, and other relevant features. These were then organized into tensors.
 - **Neighborhood search:**
 The number of atoms within 5.0 Angstroms of each atom was calculated using a cell list, which was benchmarked against
-bruteforce and the KD-tree.
+bruteforce and the kd-tree.
 - **Benchmarking:**
-The cell list and KD-tree were validated using brute force for molecules under 25,000 atoms. Beyond that, due to scaling,
-the cell list and KD-tree were validated against each other. The time required to build the data structures
+The cell list and kd-tree were validated using brute force for molecules under 25,000 atoms. Beyond that, due to scaling,
+the cell list and kd-tree were validated against each other. The time required to build the data structures
 and make the search were recorded and compared as well.
 - **GNN:**
 Battaglia-style Meta GNN made in accordance to Sarparast et al's 2024 Arxiv preprint paper. It uses molecular features to
@@ -91,7 +91,7 @@ large amount of atoms to check). By contrast, the kd-tree does best in structure
 The build and search steps for the kd-tree and cell list were timed using the chrono library from STL.
 For each trial, a choice was made between using the cell list, an OMP cell list, and a kd-tree first. This prevented any one data structure from having the advantage of going first, although this did introduce some variability. 
 
-The data was then fit to a quadratic, linear, or n log n model for that algorithm, and the $r^2$ and rmse of each were reported. The $r^2$ term measures the amount of time the algorithm takes that is explained by the number of atoms; generally a higher number is best. In general practice, an $r^2$ of positive or negative 0.90 is considered best, although in this case a value closer to 0.99 is desired. The number of atoms is the dominant factor in the runtime, so lower values are much more likely indicative of a poorly fitted model. By contrast, a low rmse is desired, as it measures the mean error the model has with the actual data. There is no universal standard for a good rmse, and it should be used to compare competing models for the same algorithm because it is influenced by the runtime. 
+The data was then fit to a quadratic, linear, or n log n model for that algorithm, and the $r^2$ and rmse of each were reported. The $r^2$ term measures the amount of time the algorithm takes that is explained by the number of atoms; generally a higher number is best. In general practice, an $r^2$ of positive or negative 0.90 is considered best, although in this case a value closer to 0.99 is desired. The number of atoms is the dominant factor in the runtime, so lower values are much more likely indicative of a poorly fitted model. By contrast, a low rmse is desired, as it measures the mean error the model has with the actual data. There is no universal standard for a good rmse, and it should be used to compare competing models for the same algorithm. 
 
 ### Specs
 - **Hardware:** Intel(R) Core(TM) Ultra 7 265 
@@ -100,7 +100,7 @@ The data was then fit to a quadratic, linear, or n log n model for that algorith
 
 ### Results (in miliseconds)
 
-The KD-tree and the cell list's times were divided between search and build. 
+The kd-tree and the cell list's times were divided between search and build. 
 
 Functions of Best Fit for Brute Force, K-d Tree, and Cell List; time in milliseconds, n in number of atoms, excluding water
 | Brute Force | Linear | Quadratic | n Ln n |
@@ -149,17 +149,17 @@ For loader.cpp, if brute force is used, add that to the enum (Algorithm::BruteFo
 ## Limitations and Future Work
 The results from the benchmark should neither be considered typical for proteins or for the data structures in general; there are other cases where kd-tree does outperform cell list. Moreover, a more realistic usage of these data structures would involve moving, not static proteins, although this adds technical complexity and a scenario out of scope of this project. 
 
-The validation is not fully complete either; as it only scales to 25,000 atoms. There is a slim possibility that there exists a coding error that produces the exact same error in the KD-tree and the cell list beyond 25,000 atoms. A more rigorous validation process would involve using an external library for those two data structures, as they would be fast enough across the whole atom range. 
+The validation is not fully complete either; as it only scales to 25,000 atoms. There is a slim possibility that there exists a coding error that produces the exact same error in the kd-tree and the cell list beyond 25,000 atoms. A more rigorous validation process would involve using an external library for those two data structures, as they would be fast enough across the whole atom range. 
 In addition, a more analysis of time and space complexity of the time and space usage of the kd-tree and cell list would be preferable to the rough estimation made using the polynomials. 
 
 The GNN is technically complete, with the graph object and data pipeline mostly complete as well; however, there is no script for downloading the necessary pdb files, and the model has not be evaluated or tested for bugs. Thus, this side of the project remains incomplete. 
 
 ## Credit
-Saraparast, S., Zaimi, A., Ebert, M., Goldsmith, M.R. (2024). _Advanced Atom-level Representations For Protein
-Flexibility Prediction Utilizing Graph Neural Networks_. Arxiv. https://doi.org/10.48550/arXiv.2408.12519
-  This paper was what this project initially attempted to replicate (the GNN and data pipeline). The idea and structure of the GNN, tensors, and data parsing came from this paper. 
+Sarparast, S., Zaimi, A., Ebert, M., Goldsmith, M.R. (2024). _Advanced Atom-level Representations For Protein
+Flexibility Prediction Utilizing Graph Neural Networks_. Arxiv. https://doi.org/10.48550/arXiv.2408.12519  
+This paper was what this project initially attempted to replicate (the GNN and data pipeline). The idea and structure of the GNN, tensors, and data parsing came from this paper.  
 
 Thanks to Gemmi for processing the .pdb files. https://gemmi.readthedocs.io/en/latest/
-Of course thanks to the pdb databank and pdb rcsb for hosting the files publicly and enabling convenient downloads respectively. https://www.rcsb.org/ and https://data.rcsb.org/. 
+Of course thanks to the pdb databank and pdb rcsb for hosting the files publicly and enabling convenient downloads respectively. https://www.rcsb.org/ and https://data.rcsb.org/.  
 
 Thanks to all the other libraries, which made processing, fitting, and displaying the data possible. 
