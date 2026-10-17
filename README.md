@@ -150,7 +150,7 @@ For loader.cpp, if brute force is used, add that to the enum (Algorithm::BruteFo
 The results from the benchmark should neither be considered typical for proteins or for the data structures in general; there are other cases where kd-tree does outperform cell list. Moreover, a more realistic usage of these data structures would involve moving, not static proteins, although this adds technical complexity and a scenario out of scope of this project. 
 
 The validation is not fully complete either; as it only scales to 25,000 atoms. There is a slim possibility that there exists a coding error that produces the exact same error in the kd-tree and the cell list beyond 25,000 atoms. A more rigorous validation process would involve using an external library for those two data structures, as they would be fast enough across the whole atom range. 
-In addition, a more analysis of time and space complexity of the time and space usage of the kd-tree and cell list would be preferable to the rough estimation made using the polynomials. 
+In addition, a more thorough analysis of time and space complexity of the time and space usage of the kd-tree and cell list would be preferable to the rough estimation made using the polynomials. 
 
 The GNN is technically complete, with the graph object and data pipeline mostly complete as well; however, there is no script for downloading the necessary pdb files, and the model has not be evaluated or tested for bugs. Thus, this side of the project remains incomplete. 
 
