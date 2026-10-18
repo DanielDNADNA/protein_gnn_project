@@ -135,7 +135,7 @@ This is perhaps not surprising, as from 5000 atoms to 2.5 million atoms, the ln 
 
 As for the speed comparison, the speed may be estimated by summing the polynomials for the building and search algorithms.  
 
-Cell list: $f(n) = 3.70 \cdot 10^{-4}n + 0.385 + f(n) = 2.72 \cdot 10^{-5}n - 0.32$.  
+Cell list: $f(n) = 3.70 \cdot 10^{-4}n + 0.385 + 2.72 \cdot 10^{-5}n - 0.32$.  
 
 KD-tree: $f(n) = 6.64 \cdot 10^{-5} n \ln n + 11.05 + 1.26 \cdot 10^{-5} n \ln n + 0.64$.  
 
@@ -156,10 +156,10 @@ The GNN is technically complete, with the graph object and data pipeline mostly 
 
 ## Credit
 Sarparast, S., Zaimi, A., Ebert, M., Goldsmith, M.R. (2024). _Advanced Atom-level Representations For Protein
-Flexibility Prediction Utilizing Graph Neural Networks_. Arxiv. https://doi.org/10.48550/arXiv.2408.12519  
+Flexibility Prediction Utilizing Graph Neural Networks_. Arxiv. https://doi.org/10.48550/arXiv.2408.12519   
 This paper was what this project initially attempted to replicate (the GNN and data pipeline). The idea and structure of the GNN, tensors, and data parsing came from this paper.  
 
-Thanks to Gemmi for processing the .pdb files. https://gemmi.readthedocs.io/en/latest/
-Of course thanks to the pdb databank and pdb rcsb for hosting the files publicly and enabling convenient downloads respectively. https://www.rcsb.org/ and https://data.rcsb.org/.  
+Thanks to Gemmi for processing the .pdb files. https://gemmi.readthedocs.io/en/latest/ 
+Of course thanks to the pdb databank and pdb rcsb for hosting the files publicly and enabling convenient downloads  respectively. https://www.rcsb.org/ and https://data.rcsb.org/.  
 
 Thanks to all the other libraries, which made processing, fitting, and displaying the data possible. 
